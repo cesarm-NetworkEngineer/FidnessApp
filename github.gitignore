@@ -1,0 +1,19 @@
+# NetBeans
+/nbproject/private/
+/build/
+/dist/
+/nbactions.xml
+/nb-configuration.xml
+
+# Archivos compilados
+*.class
+
+# Archivos de datos locales (NO subimos datos de prueba)
+/datos/*.dat
+/exports/*.pdf
+
+# Otros
+*.log
+*.bak
+*.tmp
+.DS_Store
