@@ -8,7 +8,7 @@ import modelo.Ejercicio;
 import modelo.TipoEjercicio;
 import persistencia.GestorDatos;
 
-import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -23,6 +23,9 @@ import java.util.stream.Collectors;
  * como los switches de red: reciben peticiones y las dirigen
  * al lugar correcto, sin importarles el contenido.
  * 
+ * AHORA CON BASE DE DATOS: Los ejercicios se guardan en SQLite,
+ * no más archivos .dat. Es más seguro y fácil de mantener.
+ * 
  * @author César Alonso Morera Alpízar
  */
 public class ControladorEjercicios {
@@ -36,38 +39,49 @@ public class ControladorEjercicios {
     }
     
     /**
-     * Carga los ejercicios desde el archivo
+     * Carga los ejercicios desde la BASE DE DATOS (ya no desde archivos)
+     * 
+     * Antes usábamos serialización con archivos .dat, pero ahora
+     * todo está en SQLite. Es más rápido y profesional.
      */
     private void cargarDatos() {
         try {
+            // Ahora usamos la base de datos, no archivos
             ejercicios = GestorDatos.cargarEjercicios();
             
-            // Calcular siguiente ID
+            // Calcular siguiente ID basado en el máximo existente
             siguienteId = ejercicios.stream()
                 .mapToInt(Ejercicio::getId)
                 .max()
                 .orElse(0) + 1;
             
-        } catch (Exception e) {
-            System.err.println("Error cargando ejercicios: " + e.getMessage());
+            System.out.println("✅ ControladorEjercicios: " + ejercicios.size() + " ejercicios cargados desde BD");
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Error cargando ejercicios desde la base de datos: " + e.getMessage());
+            System.err.println("   Verifica que la librería SQLite esté agregada correctamente.");
             ejercicios = new ArrayList<>();
             siguienteId = 1;
         }
     }
     
     /**
-     * Guarda los ejercicios en archivo
+     * GUARDA los cambios en la base de datos
+     * 
+     * En la versión con base de datos, las operaciones individuales
+     * (agregar, actualizar, eliminar) ya guardan automáticamente.
+     * Este método ya no es necesario, pero lo mantengo por si acaso.
      */
     private void guardarDatos() {
-        try {
-            GestorDatos.guardarEjercicios(ejercicios);
-        } catch (IOException e) {
-            System.err.println("Error guardando ejercicios: " + e.getMessage());
-        }
+        // En la versión con base de datos, los guardados son inmediatos
+        // Cada operación (agregar, actualizar, eliminar) ya guarda en la BD
+        System.out.println("💾 Nota: Los ejercicios se guardan automáticamente en la BD");
     }
     
     /**
      * Obtiene todos los ejercicios
+     * 
+     * @return lista de todos los ejercicios del catálogo
      */
     public List<Ejercicio> getTodosLosEjercicios() {
         return new ArrayList<>(ejercicios);
@@ -103,6 +117,9 @@ public class ControladorEjercicios {
     
     /**
      * Busca un ejercicio por ID
+     * 
+     * @param id identificador único del ejercicio
+     * @return el ejercicio encontrado, o null si no existe
      */
     public Ejercicio buscarPorId(int id) {
         return ejercicios.stream()
@@ -112,7 +129,7 @@ public class ControladorEjercicios {
     }
     
     /**
-     * Agrega un nuevo ejercicio al catálogo
+     * Agrega un nuevo ejercicio al catálogo (GUARDA EN BASE DE DATOS)
      * 
      * @param nombre nombre del ejercicio (único)
      * @param descripcion cómo se ejecuta
@@ -124,7 +141,7 @@ public class ControladorEjercicios {
      */
     public Ejercicio agregarEjercicio(String nombre, String descripcion, 
                                       TipoEjercicio tipo, String videoURL, String imagenURL) {
-        // Validaciones
+        // Validaciones básicas (igual que antes)
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre es obligatorio");
         }
@@ -135,7 +152,7 @@ public class ControladorEjercicios {
             throw new IllegalArgumentException("El tipo es obligatorio");
         }
         
-        // Validar nombre único (buena práctica)
+        // Validar nombre único en la lista actual
         boolean existe = ejercicios.stream()
             .anyMatch(e -> e.getNombre().equalsIgnoreCase(nombre));
         
@@ -143,15 +160,28 @@ public class ControladorEjercicios {
             throw new IllegalArgumentException("Ya existe un ejercicio con ese nombre");
         }
         
-        Ejercicio nuevo = new Ejercicio(siguienteId++, nombre, descripcion, tipo, videoURL, imagenURL);
-        ejercicios.add(nuevo);
-        guardarDatos();
-        
-        return nuevo;
+        try {
+            // Crear el ejercicio con el siguiente ID disponible
+            Ejercicio nuevo = new Ejercicio(siguienteId++, nombre, descripcion, tipo, videoURL, imagenURL);
+            
+            // GUARDAR EN BASE DE DATOS (esto es nuevo)
+            GestorDatos.guardarEjercicio(nuevo);
+            
+            // Agregar a la lista en memoria
+            ejercicios.add(nuevo);
+            
+            System.out.println("✅ Nuevo ejercicio agregado: " + nombre + " (ID: " + nuevo.getId() + ")");
+            
+            return nuevo;
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Error al guardar ejercicio en BD: " + e.getMessage());
+            throw new RuntimeException("No se pudo guardar el ejercicio en la base de datos", e);
+        }
     }
     
     /**
-     * Actualiza un ejercicio existente
+     * Actualiza un ejercicio existente (GUARDA EN BASE DE DATOS)
      * 
      * @param id ID del ejercicio a actualizar
      * @param nombre nuevo nombre (si se quiere cambiar)
@@ -165,6 +195,7 @@ public class ControladorEjercicios {
                                        TipoEjercicio tipo, String videoURL, String imagenURL) {
         Ejercicio ejercicio = buscarPorId(id);
         if (ejercicio == null) {
+            System.err.println("❌ No se encontró el ejercicio con ID: " + id);
             return false;
         }
         
@@ -200,12 +231,20 @@ public class ControladorEjercicios {
             throw new IllegalArgumentException("URL de imagen inválida: " + e.getMessage());
         }
         
-        guardarDatos();
-        return true;
+        try {
+            // ACTUALIZAR EN BASE DE DATOS
+            GestorDatos.actualizarEjercicio(ejercicio);
+            System.out.println("✅ Ejercicio actualizado: " + ejercicio.getNombre() + " (ID: " + id + ")");
+            return true;
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Error al actualizar ejercicio en BD: " + e.getMessage());
+            return false;
+        }
     }
     
     /**
-     * Elimina un ejercicio del catálogo
+     * Elimina un ejercicio del catálogo (ELIMINA DE BASE DE DATOS)
      * 
      * NOTA: En un sistema completo, habría que verificar que el ejercicio
      * no esté siendo usado en ninguna rutina antes de eliminarlo.
@@ -215,10 +254,29 @@ public class ControladorEjercicios {
      * @return true si se eliminó
      */
     public boolean eliminarEjercicio(int id) {
-        boolean removido = ejercicios.removeIf(e -> e.getId() == id);
-        if (removido) {
-            guardarDatos();
+        // Verificar que el ejercicio existe
+        Ejercicio ejercicio = buscarPorId(id);
+        if (ejercicio == null) {
+            System.err.println("❌ No se encontró el ejercicio con ID: " + id);
+            return false;
         }
-        return removido;
+        
+        try {
+            // ELIMINAR DE BASE DE DATOS
+            GestorDatos.eliminarEjercicio(id);
+            
+            // Eliminar de la lista en memoria
+            boolean removido = ejercicios.removeIf(e -> e.getId() == id);
+            
+            if (removido) {
+                System.out.println("✅ Ejercicio eliminado: " + ejercicio.getNombre() + " (ID: " + id + ")");
+            }
+            
+            return removido;
+            
+        } catch (SQLException e) {
+            System.err.println("❌ Error al eliminar ejercicio de BD: " + e.getMessage());
+            return false;
+        }
     }
 }

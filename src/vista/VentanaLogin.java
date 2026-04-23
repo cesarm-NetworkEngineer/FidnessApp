@@ -17,8 +17,8 @@ import java.awt.*;
  * Como un buen entrenador personal: clara, firme, amable y siempre dispuesta a guiar.
  * 
  * En mis clases de Hotmart, siempre digo: "la primera impresión es la que queda".
- * Por eso usé colores suaves (gris clarito) y el título grande en azul.
- * El usuario tiene que sentir que entra a un lugar amigable, no a una interfaz fría.
+ * Por eso usé colores profesionales: fondo gris suave y texto azul oscuro.
+ * Los botones también siguen la paleta corporativa con texto azul oscuro.
  * 
  * @author César Alonso Morera Alpízar
  */
@@ -31,6 +31,13 @@ public class VentanaLogin extends JFrame {
     
     private ControladorUsuarios controlador;
     
+    // ===== PALETA DE COLORES CORPORATIVOS =====
+    private static final Color COLOR_FONDO = new Color(240, 240, 245);      // Gris muy suave (fondo)
+    private static final Color COLOR_TEXTO = new Color(25, 25, 112);         // Azul medianoche (texto normal)
+    private static final Color COLOR_TITULO = new Color(0, 51, 102);         // Azul marino (títulos y botones)
+    private static final Color COLOR_BOTON_LOGIN = new Color(220, 220, 230);   // Gris claro (fondo botón login)
+    private static final Color COLOR_BOTON_REGISTRO = new Color(200, 200, 210); // Gris medio (fondo botón registro)
+    
     public VentanaLogin() {
         this.controlador = new ControladorUsuarios();
         initComponents();
@@ -40,107 +47,126 @@ public class VentanaLogin extends JFrame {
     private void configurarVentana() {
         setTitle("Fidness - Iniciar Sesión");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(450, 350);
-        setLocationRelativeTo(null); // Centrar en pantalla
-        setResizable(false); // No queremos que el usuario desacomode el diseño
+        setSize(450, 400);
+        setLocationRelativeTo(null);
+        setResizable(false);
     }
     
     /**
      * Inicializa todos los componentes gráficos
      * Uso GridBagLayout porque me da control preciso de dónde va cada cosa
-     * Como cuando organizo los ejercicios en una rutina: todo en su lugar
      */
     private void initComponents() {
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
-        panel.setBackground(new Color(245, 245, 245)); // Gris clarito, no blanco quirúrgico
+        panel.setBackground(COLOR_FONDO);
         
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.fill = GridBagConstraints.HORIZONTAL;
-        gbc.insets = new Insets(8, 8, 8, 8); // Espaciado entre componentes
+        gbc.insets = new Insets(8, 8, 8, 8);
         
-        // Título grande - que se vea desde lejos
+        // ===== TÍTULO PRINCIPAL (Azul oscuro) =====
         JLabel lblTitulo = new JLabel("🏋️‍♂️ FIDNESS", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 28));
-        lblTitulo.setForeground(new Color(70, 130, 180)); // Azul profesional
+        lblTitulo.setForeground(COLOR_TITULO);
+        lblTitulo.setBackground(COLOR_FONDO);
+        lblTitulo.setOpaque(true);
         
         gbc.gridx = 0;
         gbc.gridy = 0;
         gbc.gridwidth = 2;
         panel.add(lblTitulo, gbc);
         
-        // Subtítulo - más pequeño pero importante
+        // ===== SUBTÍTULO (Azul medianoche) =====
         JLabel lblSubtitulo = new JLabel("Tu compañero de entrenamiento", SwingConstants.CENTER);
         lblSubtitulo.setFont(new Font("Arial", Font.ITALIC, 12));
-        lblSubtitulo.setForeground(Color.GRAY);
+        lblSubtitulo.setForeground(COLOR_TEXTO);
+        lblSubtitulo.setBackground(COLOR_FONDO);
+        lblSubtitulo.setOpaque(true);
         
         gbc.gridy = 1;
         panel.add(lblSubtitulo, gbc);
         
         // Espaciador
         gbc.gridy = 2;
-        panel.add(Box.createVerticalStrut(10), gbc);
+        panel.add(Box.createVerticalStrut(15), gbc);
         
-        // Campo de email
+        // ===== CAMPO EMAIL =====
         gbc.gridwidth = 1;
         gbc.gridy = 3;
         gbc.gridx = 0;
-        panel.add(new JLabel("📧 Email:"), gbc);
+        
+        JLabel lblEmail = new JLabel("📧 Email:");
+        lblEmail.setForeground(COLOR_TEXTO);
+        lblEmail.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblEmail, gbc);
         
         txtEmail = new JTextField(20);
+        txtEmail.setBackground(Color.WHITE);
+        txtEmail.setForeground(COLOR_TEXTO);
+        txtEmail.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtEmail.setCaretColor(COLOR_TEXTO);
         gbc.gridx = 1;
         panel.add(txtEmail, gbc);
         
-        // Campo de contraseña
+        // ===== CAMPO CONTRASEÑA =====
         gbc.gridy = 4;
         gbc.gridx = 0;
-        panel.add(new JLabel("🔒 Contraseña:"), gbc);
+        
+        JLabel lblPassword = new JLabel("🔒 Contraseña:");
+        lblPassword.setForeground(COLOR_TEXTO);
+        lblPassword.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblPassword, gbc);
         
         txtPassword = new JPasswordField(20);
+        txtPassword.setBackground(Color.WHITE);
+        txtPassword.setForeground(COLOR_TEXTO);
+        txtPassword.setFont(new Font("Arial", Font.PLAIN, 12));
+        txtPassword.setCaretColor(COLOR_TEXTO);
         gbc.gridx = 1;
         panel.add(txtPassword, gbc);
         
-        // Mensaje de ayuda con credenciales de prueba
-        // En mis cursos, siempre dejo datos de prueba para facilitar
+        // ===== MENSAJE DE AYUDA =====
         gbc.gridy = 5;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
+        
         JLabel lblAyuda = new JLabel("💡 Demo: demo@fidness.com / demo123", SwingConstants.CENTER);
         lblAyuda.setFont(new Font("Arial", Font.PLAIN, 11));
-        lblAyuda.setForeground(new Color(100, 100, 100));
+        lblAyuda.setForeground(COLOR_TEXTO);
+        lblAyuda.setBackground(COLOR_FONDO);
+        lblAyuda.setOpaque(true);
         panel.add(lblAyuda, gbc);
         
-        // Botón de inicio de sesión - verde para indicar "acción positiva"
+        // ===== BOTÓN INICIAR SESIÓN (Fondo gris claro, texto azul oscuro) =====
         btnLogin = new JButton("INICIAR SESIÓN");
-        btnLogin.setBackground(new Color(60, 179, 113)); // Verde
-        btnLogin.setForeground(Color.WHITE);
+        btnLogin.setBackground(COLOR_BOTON_LOGIN);      // Fondo gris claro
+        btnLogin.setForeground(COLOR_TITULO);          // Texto azul oscuro
         btnLogin.setFont(new Font("Arial", Font.BOLD, 14));
-        btnLogin.setFocusPainted(false); // Quita el borde feo de foco
-        btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR)); // Manito al pasar
+        btnLogin.setFocusPainted(false);
+        btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnLogin.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         
         gbc.gridy = 6;
-        gbc.gridx = 0;
-        gbc.gridwidth = 2;
         gbc.insets = new Insets(20, 8, 5, 8);
         panel.add(btnLogin, gbc);
         
-        // Botón de registro - azul para diferenciar
+        // ===== BOTÓN REGISTRARSE (Fondo gris medio, texto azul oscuro) =====
         btnRegistrar = new JButton("REGISTRARSE");
-        btnRegistrar.setBackground(new Color(70, 130, 180)); // Azul
-        btnRegistrar.setForeground(Color.WHITE);
+        btnRegistrar.setBackground(COLOR_BOTON_REGISTRO); // Fondo gris medio
+        btnRegistrar.setForeground(COLOR_TITULO);         // Texto azul oscuro
         btnRegistrar.setFont(new Font("Arial", Font.BOLD, 14));
         btnRegistrar.setFocusPainted(false);
         btnRegistrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        btnRegistrar.setBorder(BorderFactory.createEmptyBorder(12, 20, 12, 20));
         
         gbc.gridy = 7;
         gbc.insets = new Insets(5, 8, 10, 8);
         panel.add(btnRegistrar, gbc);
         
-        // Eventos
+        // ===== EVENTOS =====
         btnLogin.addActionListener(e -> iniciarSesion());
         btnRegistrar.addActionListener(e -> mostrarRegistro());
-        
-        // Permitir login con Enter (detalle de usabilidad)
         txtPassword.addActionListener(e -> iniciarSesion());
         
         add(panel);
@@ -153,7 +179,6 @@ public class VentanaLogin extends JFrame {
         String email = txtEmail.getText().trim();
         String password = new String(txtPassword.getPassword());
         
-        // Validaciones básicas - el usuario a veces deja campos vacíos
         if (email.isEmpty() || password.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "Por favor complete todos los campos", 
@@ -166,23 +191,20 @@ public class VentanaLogin extends JFrame {
             Usuario usuario = controlador.iniciarSesion(email, password);
             
             if (usuario != null) {
-                // Login exitoso - mensaje de bienvenida personalizado
                 JOptionPane.showMessageDialog(this, 
                     "¡Bienvenido " + usuario.getNombre() + "!", 
                     "Login exitoso", 
                     JOptionPane.INFORMATION_MESSAGE);
                 
-                // Abrir ventana principal y cerrar login
                 new VentanaPrincipal(usuario).setVisible(true);
-                dispose(); // Cierra esta ventana
+                dispose();
                 
             } else {
-                // Login fallido - no especificamos si es email o password por seguridad
                 JOptionPane.showMessageDialog(this, 
                     "Email o contraseña incorrectos", 
                     "Error de autenticación", 
                     JOptionPane.ERROR_MESSAGE);
-                txtPassword.setText(""); // Limpiar password por seguridad
+                txtPassword.setText("");
                 txtPassword.requestFocus();
             }
         } catch (Exception ex) {
@@ -194,26 +216,55 @@ public class VentanaLogin extends JFrame {
     }
     
     /**
-     * Muestra diálogo de registro
-     * Uso un JPanel personalizado en lugar de mostrar campos sueltos
-     * Así se ve más profesional
+     * Muestra diálogo de registro con los mismos colores corporativos
      */
     private void mostrarRegistro() {
-        // Crear campos personalizados
         JTextField txtNombre = new JTextField();
-        JTextField txtEmailReg = new JTextField();
-        JPasswordField txtPasswordReg = new JPasswordField();
-        JPasswordField txtConfirmar = new JPasswordField();
+        txtNombre.setBackground(Color.WHITE);
+        txtNombre.setForeground(COLOR_TEXTO);
+        txtNombre.setFont(new Font("Arial", Font.PLAIN, 12));
         
-        // Panel con layout para el diálogo
+        JTextField txtEmailReg = new JTextField();
+        txtEmailReg.setBackground(Color.WHITE);
+        txtEmailReg.setForeground(COLOR_TEXTO);
+        txtEmailReg.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        JPasswordField txtPasswordReg = new JPasswordField();
+        txtPasswordReg.setBackground(Color.WHITE);
+        txtPasswordReg.setForeground(COLOR_TEXTO);
+        txtPasswordReg.setFont(new Font("Arial", Font.PLAIN, 12));
+        
+        JPasswordField txtConfirmar = new JPasswordField();
+        txtConfirmar.setBackground(Color.WHITE);
+        txtConfirmar.setForeground(COLOR_TEXTO);
+        txtConfirmar.setFont(new Font("Arial", Font.PLAIN, 12));
+        
         JPanel panel = new JPanel(new GridLayout(0, 2, 10, 10));
-        panel.add(new JLabel("Nombre:"));
+        panel.setBackground(COLOR_FONDO);
+        panel.setBorder(BorderFactory.createEmptyBorder(15, 15, 15, 15));
+        
+        JLabel lblNombre = new JLabel("Nombre:");
+        lblNombre.setForeground(COLOR_TEXTO);
+        lblNombre.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblNombre);
         panel.add(txtNombre);
-        panel.add(new JLabel("Email:"));
+        
+        JLabel lblEmail = new JLabel("Email:");
+        lblEmail.setForeground(COLOR_TEXTO);
+        lblEmail.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblEmail);
         panel.add(txtEmailReg);
-        panel.add(new JLabel("Contraseña:"));
+        
+        JLabel lblPassword = new JLabel("Contraseña:");
+        lblPassword.setForeground(COLOR_TEXTO);
+        lblPassword.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblPassword);
         panel.add(txtPasswordReg);
-        panel.add(new JLabel("Confirmar:"));
+        
+        JLabel lblConfirmar = new JLabel("Confirmar:");
+        lblConfirmar.setForeground(COLOR_TEXTO);
+        lblConfirmar.setFont(new Font("Arial", Font.BOLD, 12));
+        panel.add(lblConfirmar);
         panel.add(txtConfirmar);
         
         int opcion = JOptionPane.showConfirmDialog(this, panel, 
@@ -227,7 +278,6 @@ public class VentanaLogin extends JFrame {
             String password = new String(txtPasswordReg.getPassword());
             String confirmar = new String(txtConfirmar.getPassword());
             
-            // Validaciones
             if (nombre.isEmpty() || email.isEmpty() || password.isEmpty()) {
                 JOptionPane.showMessageDialog(this, 
                     "Todos los campos son obligatorios", 
@@ -260,7 +310,6 @@ public class VentanaLogin extends JFrame {
                     "Registro completado", 
                     JOptionPane.INFORMATION_MESSAGE);
                 
-                // Auto-completar el email en el login (detalle que gusta)
                 txtEmail.setText(email);
                 txtPassword.setText("");
                 

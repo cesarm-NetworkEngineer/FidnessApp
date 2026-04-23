@@ -14,8 +14,12 @@ import javax.swing.*;
  * En mis años como instructor, siempre digo a mis estudiantes:
  * "El main es como la puerta de entrada a tu casa - tiene que ser acogedora".
  * 
+ * AHORA CON REDES: Este main también inicia el servidor local que permite
+ * la comunicación por sockets. Es como tener un portero electrónico
+ * además de la puerta principal.
+ * 
  * @author César Alonso Morera Alpízar
- * @version 1.0
+ * @version 2.0 - Con base de datos y redes
  */
 public class FidnessApp {
 
@@ -28,9 +32,30 @@ public class FidnessApp {
      * Es como tener un cocinero principal (hilo de eventos) y ayudantes
      * (otros hilos) que no estorban.
      * 
+     * NUEVO: Ahora también iniciamos el servidor en un hilo separado
+     * para cumplir con el requisito de REDES del proyecto final.
+     * 
      * @param args argumentos de línea de comandos (no se usan en esta app)
      */
     public static void main(String[] args) {
+        
+        // ===== NUEVO: INICIAR SERVIDOR (Requisito de REDES) =====
+        // El servidor corre en segundo plano atendiendo conexiones
+        // Es como tener un recepcionista que trabaja mientras tú haces otras cosas
+        System.out.println("🚀 Iniciando componentes del sistema...");
+        
+        try {
+            // Iniciar el servidor local en un hilo separado
+            // Esto NO bloquea la interfaz gráfica
+            servidor.ServidorLocal.getInstance().start();
+            System.out.println("✅ Servidor de red iniciado correctamente");
+        } catch (Exception e) {
+            System.err.println("⚠️ ADVERTENCIA: No se pudo iniciar el servidor de red");
+            System.err.println("   La aplicación funcionará igual, pero sin funcionalidad de red");
+            System.err.println("   Error: " + e.getMessage());
+        }
+        
+        // ===== INTERFAZ GRÁFICA (como antes) =====
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -52,7 +77,8 @@ public class FidnessApp {
                 System.out.println("=====================================");
                 System.out.println("📌 Usuario demo: demo@fidness.com / demo123");
                 System.out.println("📌 Admin: admin@fidness.com / admin123");
-                System.out.println("📌 Datos guardados en: /datos");
+                System.out.println("📌 Base de datos: SQLite (fidness.db)");
+                System.out.println("📌 Servidor de red: Puerto 9090");
                 System.out.println("=====================================");
                 
                 // Crear y mostrar la ventana de login
