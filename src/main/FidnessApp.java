@@ -6,6 +6,8 @@ package main;
 
 import vista.VentanaLogin;
 import javax.swing.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Clase principal de la aplicación Fidness.
@@ -39,50 +41,58 @@ public class FidnessApp {
      */
     public static void main(String[] args) {
         
+        // ==========================================================
+        // CONFIGURACION PARA ELIMINAR ADVERTENCIAS DE SQLITE
+        // ==========================================================
+        // Estas líneas reducen/eliminan las advertencias de acceso nativo
+        // que aparecen en Java 16+ con SQLite
+        System.setProperty("org.sqlite.lib.path", "");
+        System.setProperty("org.sqlite.lib.name", "");
+        Logger.getLogger("org.sqlite").setLevel(Level.SEVERE);
+        // Suprimir también otras advertencias de SQLite
+        Logger.getLogger("org.sqlite.JDBC").setLevel(Level.SEVERE);
+        // ==========================================================
+        
         // ===== NUEVO: INICIAR SERVIDOR (Requisito de REDES) =====
         // El servidor corre en segundo plano atendiendo conexiones
         // Es como tener un recepcionista que trabaja mientras tú haces otras cosas
-        System.out.println("🚀 Iniciando componentes del sistema...");
+        System.out.println("Iniciando componentes del sistema...");
         
         try {
             // Iniciar el servidor local en un hilo separado
             // Esto NO bloquea la interfaz gráfica
             servidor.ServidorLocal.getInstance().start();
-            System.out.println("✅ Servidor de red iniciado correctamente");
+            System.out.println("Servidor de red iniciado correctamente");
         } catch (Exception e) {
-            System.err.println("⚠️ ADVERTENCIA: No se pudo iniciar el servidor de red");
-            System.err.println("   La aplicación funcionará igual, pero sin funcionalidad de red");
+            System.err.println("ADVERTENCIA: No se pudo iniciar el servidor de red");
+            System.err.println("   La aplicacion funcionara igual, pero sin funcionalidad de red");
             System.err.println("   Error: " + e.getMessage());
         }
         
-        // ===== INTERFAZ GRÁFICA (como antes) =====
+        // ===== INTERFAZ GRAFICA (como antes) =====
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 try {
                     // Intento usar el look and feel del sistema operativo
-                    // Así la app se ve "nativa" en Windows, Mac o Linux
-                    // En mis cursos de Rocky Linux, siempre enseño que la
-                    // experiencia de usuario debe sentirse familiar
+                    // Asi la app se ve "nativa" en Windows, Mac o Linux
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                 } catch (Exception e) {
                     // Si falla, usamos el default (Metal) y ya
-                    // No es lo ideal, pero la app sigue funcionando
                     System.err.println("No se pudo cargar el Look and Feel: " + e.getMessage());
                 }
                 
-                // Mensaje de bienvenida en consola (para los que les gusta ver el backend)
+                // Mensaje de bienvenida en consola
                 System.out.println("=====================================");
-                System.out.println("   🏋️‍♂️ FIDNESS APP - Iniciando...");
+                System.out.println("   FIDNESS APP - Iniciando...");
                 System.out.println("=====================================");
-                System.out.println("📌 Usuario demo: demo@fidness.com / demo123");
-                System.out.println("📌 Admin: admin@fidness.com / admin123");
-                System.out.println("📌 Base de datos: SQLite (fidness.db)");
-                System.out.println("📌 Servidor de red: Puerto 9090");
+                System.out.println("Usuario demo: demo@fidness.com / demo123");
+                System.out.println("Admin: admin@fidness.com / admin123");
+                System.out.println("Base de datos: SQLite (fidness.db)");
+                System.out.println("Servidor de red: Puerto 9090");
                 System.out.println("=====================================");
                 
                 // Crear y mostrar la ventana de login
-                // La primera impresión del usuario - tiene que ser perfecta
                 new VentanaLogin().setVisible(true);
             }
         });
