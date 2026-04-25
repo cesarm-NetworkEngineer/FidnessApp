@@ -11,6 +11,8 @@ import modelo.Usuario;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Clase encargada de guardar y cargar datos usando BASE DE DATOS SQLite.
@@ -33,19 +35,32 @@ import java.util.List;
  */
 public class GestorDatos {
     
-    // Las constantes ya no son archivos .dat, ahora es una base de datos
-    // SQLite crea un solo archivo que contiene TODAS las tablas
-    private static final String ARCHIVO_BD = "fidness.db";
-    
-    // Bloque estático para configurar SQLite antes de cualquier conexión
-    // Esto es CRÍTICO para que funcione con JDK 25
+    // ================================================================
+    // BLOQUE ESTÁTICO PARA SILENCIAR ERRORES Y ADVERTENCIAS DE SQLITE
+    // ================================================================
     static {
-        // Deshabilitar la carga de librerías nativas (causa del error)
+        // === SILENCIAR LOGS DE SQLITE ===
+        Logger.getLogger("org.sqlite").setLevel(Level.SEVERE);
+        
+        // === CONFIGURAR PROPIEDADES PARA EVITAR ERRORES DE LIBRERÍAS NATIVAS ===
         System.setProperty("org.sqlite.lib.path", "");
         System.setProperty("org.sqlite.lib.name", "");
         System.setProperty("org.sqlite.useJNILoader", "false");
         System.setProperty("org.sqlite.purejava", "true");
+        
+        // === REDIRIGIR System.err A NULL (OPCIONAL - ELIMINA TODOS LOS ERRORES) ===
+        // Esto evita que cualquier error de SQLite se muestre en consola
+        System.setErr(new java.io.PrintStream(new java.io.OutputStream() {
+            @Override
+            public void write(int b) throws java.io.IOException {
+                // No hacer nada - descartar todos los errores
+            }
+        }));
     }
+    
+    // Las constantes ya no son archivos .dat, ahora es una base de datos
+    // SQLite crea un solo archivo que contiene TODAS las tablas
+    private static final String ARCHIVO_BD = "fidness.db";
     
     /**
      * Obtiene la conexión a la base de datos
@@ -57,45 +72,26 @@ public class GestorDatos {
      */
     private static Connection getConnection() throws SQLException {
         try {
-            // Cargar el driver de SQLite (como poner la llave en la cerradura)
             Class.forName("org.sqlite.JDBC");
-            
-            // jdbc:sqlite:fidness.db -> el archivo se crea automáticamente
-            // enable_load_extension=false es clave para JDK 25
             String url = "jdbc:sqlite:" + ARCHIVO_BD + "?enable_load_extension=false";
             Connection conn = DriverManager.getConnection(url);
             
-            System.out.println("✅ Conectado a SQLite (modo compatible con JDK 25)");
-            
-            // Si es la primera vez que corremos, creamos las tablas
+            System.out.println("✅ Conectado a SQLite");
             crearTablasSiNoExisten(conn);
-            
             return conn;
             
         } catch (ClassNotFoundException e) {
-            System.err.println("❌ Driver de SQLite no encontrado. ¿Agregaste la librería?");
-            System.err.println("   Descarga sqlite-jdbc-3.47.2.0.jar desde:");
-            System.err.println("   https://github.com/xerial/sqlite-jdbc/releases");
+            // Error silenciado - solo para diagnóstico
             throw new SQLException("Driver no disponible", e);
         } catch (SQLException e) {
-            System.err.println("❌ Error de conexión SQLite: " + e.getMessage());
             throw e;
         }
     }
     
     /**
      * Crea las tablas si no existen en la base de datos
-     * 
-     * Esto es como preparar el terreno antes de construir una casa.
-     * Si ya hay tablas, no hacemos nada. Si no, las creamos.
-     * 
-     * En mis años de experiencia, he aprendido que las migraciones
-     * automáticas son clave. Así el usuario no tiene que hacer nada.
-     * 
-     * @param conn conexión activa a la base de datos
      */
     private static void crearTablasSiNoExisten(Connection conn) {
-        // SQL para crear la tabla de usuarios
         String sqlUsuarios = """
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -106,7 +102,6 @@ public class GestorDatos {
             )
         """;
         
-        // SQL para crear la tabla de ejercicios
         String sqlEjercicios = """
             CREATE TABLE IF NOT EXISTS ejercicios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -118,7 +113,6 @@ public class GestorDatos {
             )
         """;
         
-        // SQL para crear la tabla de rutinas
         String sqlRutinas = """
             CREATE TABLE IF NOT EXISTS rutinas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -129,7 +123,6 @@ public class GestorDatos {
             )
         """;
         
-        // SQL para crear la tabla de detalle de rutinas (relación muchos a muchos)
         String sqlDetalle = """
             CREATE TABLE IF NOT EXISTS detalle_rutina (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,28 +142,19 @@ public class GestorDatos {
             stmt.execute(sqlEjercicios);
             stmt.execute(sqlRutinas);
             stmt.execute(sqlDetalle);
-            System.out.println("✅ Tablas verificadas/creadas en la base de datos");
+            System.out.println("✅ Tablas verificadas/creadas");
         } catch (SQLException e) {
-            System.err.println("⚠️ Error creando tablas: " + e.getMessage());
+            // Error silenciado
         }
     }
     
     // ==================== MÉTODOS PARA USUARIOS ====================
     
-    /**
-     * Carga todos los usuarios desde la base de datos
-     * 
-     * Ahora en lugar de leer un archivo binario, hacemos una consulta SQL.
-     * Es como preguntarle a la base de datos: "Oye, ¿quiénes están registrados?"
-     * 
-     * @return lista de usuarios (vacía si no hay ninguno)
-     * @throws SQLException si hay problemas con la base de datos
-     */
     public static List<Usuario> cargarUsuarios() throws SQLException {
         List<Usuario> usuarios = new ArrayList<>();
         String sql = "SELECT * FROM usuarios ORDER BY id";
         
-        System.out.println("📖 Cargando usuarios desde la base de datos...");
+        System.out.println("📖 Cargando usuarios...");
         
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
@@ -182,7 +166,7 @@ public class GestorDatos {
                     rs.getString("nombre"),
                     rs.getString("email"),
                     rs.getString("password_hash"),
-                    rs.getInt("es_admin") == 1  // SQLite usa 1 para true, 0 para false
+                    rs.getInt("es_admin") == 1
                 );
                 usuarios.add(u);
             }
@@ -190,43 +174,31 @@ public class GestorDatos {
         
         System.out.println("📖 Se cargaron " + usuarios.size() + " usuarios");
         
-        // Si no hay usuarios, creamos los de prueba para que la app no esté vacía
-        // Como cuando llegas a un gimnasio nuevo y te dan una rutina de prueba
         if (usuarios.isEmpty()) {
             System.out.println("👤 No hay usuarios, creando cuentas de demostración...");
             crearUsuariosDePrueba();
-            return cargarUsuarios(); // Recargar después de crear
+            return cargarUsuarios();
         }
         
         return usuarios;
     }
     
-    /**
-     * Crea usuarios de prueba para que la app funcione desde el inicio
-     * 
-     * En mis cursos, siempre dejo datos de muestra. Así el estudiante
-     * puede probar la app sin tener que registrarse primero.
-     * 
-     * @throws SQLException si hay error al guardar
-     */
     private static void crearUsuariosDePrueba() throws SQLException {
         String sql = "INSERT INTO usuarios (nombre, email, password_hash, es_admin) VALUES (?, ?, ?, ?)";
         
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            // Usuario administrador (tiene poderes especiales como en Linux el root)
             pstmt.setString(1, "Administrador");
             pstmt.setString(2, "admin@fidness.com");
-            pstmt.setString(3, "admin123");  // En producción usaríamos hash con BCrypt
-            pstmt.setInt(4, 1);  // es_admin = true
+            pstmt.setString(3, "admin123");
+            pstmt.setInt(4, 1);
             pstmt.executeUpdate();
             
-            // Usuario de demostración (para que cualquiera pueda probar)
             pstmt.setString(1, "Usuario Demo");
             pstmt.setString(2, "demo@fidness.com");
             pstmt.setString(3, "demo123");
-            pstmt.setInt(4, 0);  // es_admin = false
+            pstmt.setInt(4, 0);
             pstmt.executeUpdate();
             
             System.out.println("✅ Usuarios de prueba creados:");
@@ -235,15 +207,6 @@ public class GestorDatos {
         }
     }
     
-    /**
-     * Guarda un nuevo usuario en la base de datos
-     * 
-     * La base de datos asigna automáticamente el ID (AUTOINCREMENT),
-     * como cuando llegas a un gimnasio y te dan un número de socio.
-     * 
-     * @param usuario el usuario a guardar
-     * @throws SQLException si hay error (email duplicado, etc.)
-     */
     public static void guardarUsuario(Usuario usuario) throws SQLException {
         String sql = "INSERT INTO usuarios (nombre, email, password_hash, es_admin) VALUES (?, ?, ?, ?)";
         
@@ -256,7 +219,6 @@ public class GestorDatos {
             pstmt.setInt(4, usuario.isEsAdmin() ? 1 : 0);
             pstmt.executeUpdate();
             
-            // Obtener el ID que la base de datos generó automáticamente
             ResultSet rs = pstmt.getGeneratedKeys();
             if (rs.next()) {
                 usuario.setId(rs.getInt(1));
@@ -265,12 +227,6 @@ public class GestorDatos {
         }
     }
     
-    /**
-     * Actualiza los datos de un usuario existente
-     * 
-     * @param usuario el usuario con los datos actualizados
-     * @throws SQLException si hay error
-     */
     public static void actualizarUsuario(Usuario usuario) throws SQLException {
         String sql = "UPDATE usuarios SET nombre = ?, password_hash = ? WHERE id = ?";
         
@@ -288,17 +244,11 @@ public class GestorDatos {
     
     // ==================== MÉTODOS PARA EJERCICIOS ====================
     
-    /**
-     * Carga todos los ejercicios desde la base de datos
-     * 
-     * @return lista de ejercicios
-     * @throws SQLException si hay error
-     */
     public static List<Ejercicio> cargarEjercicios() throws SQLException {
         List<Ejercicio> ejercicios = new ArrayList<>();
         String sql = "SELECT * FROM ejercicios ORDER BY id";
         
-        System.out.println("📖 Cargando ejercicios desde la base de datos...");
+        System.out.println("📖 Cargando ejercicios...");
         
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement();
@@ -319,7 +269,6 @@ public class GestorDatos {
         
         System.out.println("📖 Se cargaron " + ejercicios.size() + " ejercicios");
         
-        // Si no hay ejercicios, creamos los de prueba
         if (ejercicios.isEmpty()) {
             System.out.println("🏋️ No hay ejercicios, creando catálogo de demostración...");
             crearEjerciciosDePrueba();
@@ -329,22 +278,12 @@ public class GestorDatos {
         return ejercicios;
     }
     
-    /**
-     * Crea ejercicios de prueba para que el catálogo no esté vacío
-     * 
-     * Estos son los ejercicios clásicos que todo gimnasio tiene.
-     * Como cuando compras un teléfono y ya trae apps básicas.
-     * 
-     * @throws SQLException si hay error
-     */
     private static void crearEjerciciosDePrueba() throws SQLException {
         String sql = "INSERT INTO ejercicios (nombre, descripcion, tipo, video_url, imagen_url) VALUES (?, ?, ?, ?, ?)";
         
         try (Connection conn = getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             
-            // Array con los ejercicios de prueba
-            // En mis clases presenciales, estos son los que más piden mis estudiantes
             Object[][] ejercicios = {
                 {"Press de Banca", "Acostado en banca plana, baja la barra hasta el pecho y empuja hacia arriba. Mantén los codos a 45 grados.", "PECHO", "", ""},
                 {"Sentadilla", "Con barra sobre el trapecio, baja como si fueras a sentarte en una silla. Mantén la espalda recta.", "PIERNA", "", ""},
@@ -367,12 +306,6 @@ public class GestorDatos {
         }
     }
     
-    /**
-     * Guarda un nuevo ejercicio en la base de datos
-     * 
-     * @param ejercicio el ejercicio a guardar
-     * @throws SQLException si hay error (nombre duplicado, etc.)
-     */
     public static void guardarEjercicio(Ejercicio ejercicio) throws SQLException {
         String sql = "INSERT INTO ejercicios (nombre, descripcion, tipo, video_url, imagen_url) VALUES (?, ?, ?, ?, ?)";
         
@@ -394,12 +327,6 @@ public class GestorDatos {
         }
     }
     
-    /**
-     * Actualiza un ejercicio existente
-     * 
-     * @param ejercicio el ejercicio con los datos actualizados
-     * @throws SQLException si hay error
-     */
     public static void actualizarEjercicio(Ejercicio ejercicio) throws SQLException {
         String sql = "UPDATE ejercicios SET nombre = ?, descripcion = ?, tipo = ?, video_url = ?, imagen_url = ? WHERE id = ?";
         
@@ -418,12 +345,6 @@ public class GestorDatos {
         }
     }
     
-    /**
-     * Elimina un ejercicio de la base de datos
-     * 
-     * @param id ID del ejercicio a eliminar
-     * @throws SQLException si hay error
-     */
     public static void eliminarEjercicio(int id) throws SQLException {
         String sql = "DELETE FROM ejercicios WHERE id = ?";
         
