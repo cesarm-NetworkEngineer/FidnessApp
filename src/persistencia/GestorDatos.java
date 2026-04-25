@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import modelo.DetalleRutina;
+import modelo.Rutina;
 
 /**
  * Clase encargada de guardar y cargar datos usando BASE DE DATOS SQLite.
@@ -358,5 +360,13 @@ public class GestorDatos {
                 System.out.println("✅ Ejercicio eliminado (ID: " + id + ")");
             }
         }
+    }
+
+    public static List<DetalleRutina> cargarDetalles() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
+    }
+
+    public static List<Rutina> cargarRutinas() {
+        throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
 }
