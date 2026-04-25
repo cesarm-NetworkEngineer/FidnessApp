@@ -14,14 +14,7 @@ import java.awt.*;
 import java.util.List;
 
 /**
- * Panel de ejercicios (HU2 - Explorar biblioteca)
- * 
- * Este panel implementa la funcionalidad de explorar el catálogo de ejercicios.
- * Cuando creaba contenido para AVA, entendí que los usuarios necesitan
- * encontrar rápido lo que buscan. Por eso puse:
- * - Filtro por tipo (como las VLANs que mencioné antes)
- * - Búsqueda por nombre (para el que ya sabe lo que quiere)
- * - Tabla con los resultados (información clara y ordenada)
+ * Panel de ejercicios para explorar el catálogo.
  * 
  * @author César Alonso Morera Alpízar
  */
@@ -52,10 +45,9 @@ public class PanelEjercicios extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Panel superior con filtros - lo pongo arriba para acceso rápido
-        // Como la barra de búsqueda de Google: lo primero que ves
+        // Panel superior con filtros
         JPanel panelFiltros = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        panelFiltros.setBackground(new Color(240, 240, 240)); // Un tono diferente para destacar
+        panelFiltros.setBackground(new Color(240, 240, 240));
         
         panelFiltros.add(new JLabel("Tipo:"));
         cmbTipoEjercicio = new JComboBox<>(TipoEjercicio.getNombres());
@@ -65,20 +57,20 @@ public class PanelEjercicios extends JPanel {
         txtBuscar = new JTextField(15);
         panelFiltros.add(txtBuscar);
         
-        JButton btnBuscar = new JButton("🔍 Buscar");
+        JButton btnBuscar = new JButton("Buscar");
         panelFiltros.add(btnBuscar);
         
-        JButton btnLimpiar = new JButton("🗑️ Limpiar");
+        JButton btnLimpiar = new JButton("Limpiar");
         panelFiltros.add(btnLimpiar);
         
         add(panelFiltros, BorderLayout.NORTH);
         
-        // Panel central (tabla de ejercicios)
-        String[] columnas = {"ID", "Nombre", "Tipo", "Descripción"};
+        // Tabla de ejercicios
+        String[] columnas = {"ID", "Nombre", "Tipo", "Descripcion"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // No queremos que editen directamente en la tabla
+                return false;
             }
         };
         
@@ -91,7 +83,7 @@ public class PanelEjercicios extends JPanel {
         
         add(new JScrollPane(tablaEjercicios), BorderLayout.CENTER);
         
-        // Panel inferior (detalle y acciones)
+        // Panel inferior con detalle y botones
         JPanel panelInferior = new JPanel(new BorderLayout(5, 5));
         panelInferior.setBorder(BorderFactory.createTitledBorder("Detalle del ejercicio"));
         
@@ -103,15 +95,15 @@ public class PanelEjercicios extends JPanel {
         panelInferior.add(new JScrollPane(txtDescripcion), BorderLayout.CENTER);
         
         JPanel panelBotones = new JPanel(new FlowLayout());
-        btnVerVideo = new JButton("🎬 Ver Video");
-        btnAgregarARutina = new JButton("➕ Agregar a Rutina");
+        btnVerVideo = new JButton("Ver Video");
+        btnAgregarARutina = new JButton("Agregar a Rutina");
         panelBotones.add(btnVerVideo);
         panelBotones.add(btnAgregarARutina);
         panelInferior.add(panelBotones, BorderLayout.SOUTH);
         
         add(panelInferior, BorderLayout.SOUTH);
         
-        // Eventos de botones
+        // Eventos
         btnBuscar.addActionListener(e -> buscarEjercicios());
         btnLimpiar.addActionListener(e -> limpiarFiltros());
         btnVerVideo.addActionListener(e -> verVideo());
@@ -119,7 +111,6 @@ public class PanelEjercicios extends JPanel {
     }
     
     private void configurarEventos() {
-        // Cuando seleccionan una fila, mostramos el detalle
         tablaEjercicios.getSelectionModel().addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 mostrarDetalleEjercicio();
@@ -140,10 +131,14 @@ public class PanelEjercicios extends JPanel {
     }
     
     /**
-     * Busca ejercicios según filtros seleccionados
-     * Lógica: si hay texto en búsqueda, priorizo eso sobre el tipo
-     * Aprendí en soporte: el usuario siempre quiere lo que escribió
+     * Refresca la tabla de ejercicios (llamar después de agregar/editar/eliminar)
      */
+    public void refrescar() {
+    ejerciciosActuales = controlador.getTodosLosEjercicios();
+    cargarEjercicios();
+    System.out.println("PanelEjercicios refrescado: " + ejerciciosActuales.size() + " ejercicios");
+}
+    
     private void buscarEjercicios() {
         String tipo = (String) cmbTipoEjercicio.getSelectedItem();
         String busqueda = txtBuscar.getText().trim();
@@ -156,7 +151,6 @@ public class PanelEjercicios extends JPanel {
         
         cargarEjercicios();
         
-        // Mensaje amigable si no hay resultados
         if (ejerciciosActuales.isEmpty()) {
             JOptionPane.showMessageDialog(this, 
                 "No hay ejercicios para el criterio seleccionado", 
@@ -198,7 +192,6 @@ public class PanelEjercicios extends JPanel {
         
         if (e != null && e.getVideoURL() != null && !e.getVideoURL().isEmpty()) {
             try {
-                // Abrir en el navegador por defecto
                 Desktop.getDesktop().browse(new java.net.URI(e.getVideoURL()));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, 
@@ -214,10 +207,6 @@ public class PanelEjercicios extends JPanel {
         }
     }
     
-    /**
-     * Agrega el ejercicio seleccionado a la rutina actual
-     * Por ahora es un placeholder - se integrará con PanelMisRutinas
-     */
     private void agregarARutina() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
@@ -228,8 +217,6 @@ public class PanelEjercicios extends JPanel {
             return;
         }
         
-        // Aquí se integraría con el panel de rutinas
-        // Por ahora, mensaje informativo
         JOptionPane.showMessageDialog(this, 
             "Funcionalidad: Agregar a rutina\n(Se integrará con PanelMisRutinas)", 
             "En desarrollo", 

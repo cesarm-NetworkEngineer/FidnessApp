@@ -11,31 +11,21 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
-/**
- * Panel de administración (HU6 - Gestionar catálogo)
- * 
- * Solo visible para usuarios con esAdmin = true.
- * Permite agregar, editar y eliminar ejercicios del catálogo.
- * 
- * En mis años de experiencia, aprendí que los paneles de admin
- * deben ser potentes pero claros. Por eso uso una tabla con
- * todas las columnas y botones específicos.
- * 
- * @author César Alonso Morera Alpízar
- */
 public class PanelAdministrador extends JPanel {
     
     private ControladorEjercicios controlador;
     private JTable tablaEjercicios;
     private DefaultTableModel modeloTabla;
+    private PanelEjercicios panelEjercicios;
     
     private JButton btnAgregar;
     private JButton btnEditar;
     private JButton btnEliminar;
     private JButton btnActualizar;
     
-    public PanelAdministrador(ControladorEjercicios controlador) {
+    public PanelAdministrador(ControladorEjercicios controlador, PanelEjercicios panelEjercicios) {
         this.controlador = controlador;
+        this.panelEjercicios = panelEjercicios;
         initComponents();
         cargarEjercicios();
     }
@@ -44,17 +34,15 @@ public class PanelAdministrador extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Título
-        JLabel lblTitulo = new JLabel("⚙️ Administración del Catálogo de Ejercicios", SwingConstants.CENTER);
+        JLabel lblTitulo = new JLabel("Administracion del Catalogo de Ejercicios", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
         add(lblTitulo, BorderLayout.NORTH);
         
-        // Tabla de ejercicios - mostramos toda la información
-        String[] columnas = {"ID", "Nombre", "Tipo", "Descripción", "Video URL", "Imagen URL"};
+        String[] columnas = {"ID", "Nombre", "Tipo", "Descripcion", "Video URL", "Imagen URL"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Solo lectura
+                return false;
             }
         };
         
@@ -62,14 +50,13 @@ public class PanelAdministrador extends JPanel {
         tablaEjercicios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         add(new JScrollPane(tablaEjercicios), BorderLayout.CENTER);
         
-        // Botones de acción
         JPanel panelBotones = new JPanel(new FlowLayout());
         panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         
-        btnAgregar = new JButton("➕ Agregar Ejercicio");
-        btnEditar = new JButton("✏️ Editar");
-        btnEliminar = new JButton("🗑️ Eliminar");
-        btnActualizar = new JButton("🔄 Actualizar Lista");
+        btnAgregar = new JButton("Agregar Ejercicio");
+        btnEditar = new JButton("Editar");
+        btnEliminar = new JButton("Eliminar");
+        btnActualizar = new JButton("Actualizar Lista");
         
         panelBotones.add(btnAgregar);
         panelBotones.add(btnEditar);
@@ -78,7 +65,6 @@ public class PanelAdministrador extends JPanel {
         
         add(panelBotones, BorderLayout.SOUTH);
         
-        // Eventos
         btnAgregar.addActionListener(e -> agregarEjercicio());
         btnEditar.addActionListener(e -> editarEjercicio());
         btnEliminar.addActionListener(e -> eliminarEjercicio());
@@ -99,9 +85,6 @@ public class PanelAdministrador extends JPanel {
         }
     }
     
-    /**
-     * Diálogo para agregar un nuevo ejercicio
-     */
     private void agregarEjercicio() {
         JTextField txtNombre = new JTextField();
         JTextArea txtDescripcion = new JTextArea(3, 20);
@@ -120,7 +103,7 @@ public class PanelAdministrador extends JPanel {
         panel.add(txtNombre, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Descripción:"), gbc);
+        panel.add(new JLabel("Descripcion:"), gbc);
         gbc.gridx = 1;
         panel.add(new JScrollPane(txtDescripcion), gbc);
         
@@ -139,8 +122,7 @@ public class PanelAdministrador extends JPanel {
         gbc.gridx = 1;
         panel.add(txtImagen, gbc);
         
-        int opcion = JOptionPane.showConfirmDialog(this, panel,
-            "➕ Agregar Nuevo Ejercicio", JOptionPane.OK_CANCEL_OPTION);
+        int opcion = JOptionPane.showConfirmDialog(this, panel, "Agregar Nuevo Ejercicio", JOptionPane.OK_CANCEL_OPTION);
         
         if (opcion == JOptionPane.OK_OPTION) {
             try {
@@ -153,40 +135,30 @@ public class PanelAdministrador extends JPanel {
                     txtImagen.getText()
                 );
                 cargarEjercicios();
-                JOptionPane.showMessageDialog(this, 
-                    "✅ Ejercicio agregado correctamente", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                if (panelEjercicios != null) panelEjercicios.refrescar();
+                JOptionPane.showMessageDialog(this, "Ejercicio agregado correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
-    /**
-     * Diálogo para editar un ejercicio existente
-     */
     private void editarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this,
-                "Seleccione un ejercicio para editar",
-                "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio para editar", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int id = (int) modeloTabla.getValueAt(fila, 0);
         Ejercicio e = controlador.buscarPorId(id);
-        
         if (e == null) return;
         
         JTextField txtNombre = new JTextField(e.getNombre());
         JTextArea txtDescripcion = new JTextArea(e.getDescripcion(), 3, 20);
         JComboBox<String> cmbTipo = new JComboBox<>(TipoEjercicio.getNombres());
-        cmbTipo.setSelectedItem(e.getTipo().toString().charAt(0) + 
-            e.getTipo().toString().substring(1).toLowerCase());
+        String tipoStr = e.getTipo().toString();
+        cmbTipo.setSelectedItem(tipoStr.charAt(0) + tipoStr.substring(1).toLowerCase());
         
         JTextField txtVideo = new JTextField(e.getVideoURL());
         JTextField txtImagen = new JTextField(e.getImagenURL());
@@ -202,7 +174,7 @@ public class PanelAdministrador extends JPanel {
         panel.add(txtNombre, gbc);
         
         gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Descripción:"), gbc);
+        panel.add(new JLabel("Descripcion:"), gbc);
         gbc.gridx = 1;
         panel.add(new JScrollPane(txtDescripcion), gbc);
         
@@ -221,68 +193,41 @@ public class PanelAdministrador extends JPanel {
         gbc.gridx = 1;
         panel.add(txtImagen, gbc);
         
-        int opcion = JOptionPane.showConfirmDialog(this, panel,
-            "✏️ Editar Ejercicio", JOptionPane.OK_CANCEL_OPTION);
+        int opcion = JOptionPane.showConfirmDialog(this, panel, "Editar Ejercicio", JOptionPane.OK_CANCEL_OPTION);
         
         if (opcion == JOptionPane.OK_OPTION) {
             try {
                 TipoEjercicio tipo = TipoEjercicio.fromString((String) cmbTipo.getSelectedItem());
-                controlador.actualizarEjercicio(
-                    id,
-                    txtNombre.getText(),
-                    txtDescripcion.getText(),
-                    tipo,
-                    txtVideo.getText(),
-                    txtImagen.getText()
-                );
+                controlador.actualizarEjercicio(id, txtNombre.getText(), txtDescripcion.getText(), tipo, txtVideo.getText(), txtImagen.getText());
                 cargarEjercicios();
-                JOptionPane.showMessageDialog(this, 
-                    "✅ Ejercicio actualizado correctamente", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                if (panelEjercicios != null) panelEjercicios.refrescar();
+                JOptionPane.showMessageDialog(this, "Ejercicio actualizado correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }
     
-    /**
-     * Elimina un ejercicio con confirmación
-     * NOTA: En un sistema real, habría que verificar que no esté en uso
-     */
     private void eliminarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this,
-                "Seleccione un ejercicio para eliminar",
-                "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio para eliminar", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int id = (int) modeloTabla.getValueAt(fila, 0);
         String nombre = (String) modeloTabla.getValueAt(fila, 1);
         
-        int confirmacion = JOptionPane.showConfirmDialog(this,
-            "¿Está seguro de eliminar el ejercicio '" + nombre + "'?\n" +
-            "Esta acción no se puede deshacer.",
-            "Confirmar eliminación",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
+        int confirmacion = JOptionPane.showConfirmDialog(this, "Eliminar el ejercicio '" + nombre + "'?", "Confirmar", JOptionPane.YES_NO_OPTION);
         
         if (confirmacion == JOptionPane.YES_OPTION) {
             try {
                 controlador.eliminarEjercicio(id);
                 cargarEjercicios();
-                JOptionPane.showMessageDialog(this, 
-                    "✅ Ejercicio eliminado correctamente", 
-                    "Éxito", 
-                    JOptionPane.INFORMATION_MESSAGE);
+                if (panelEjercicios != null) panelEjercicios.refrescar();
+                JOptionPane.showMessageDialog(this, "Ejercicio eliminado", "Exito", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this,
-                    "Error: " + ex.getMessage(),
-                    "Error", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

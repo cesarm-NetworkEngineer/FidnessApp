@@ -1,33 +1,43 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
 package vista;
 
+import controlador.ControladorEjercicios;
 import modelo.Rutina;
 import modelo.Usuario;
 import modelo.Exportador;
 import modelo.ExportadorPDF;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 
 /**
- * Panel de Mis Rutinas (HU4 - Gestionar rutinas)
+ * Autor: César Alonso Morera Alpízar
  * 
- * Organización izquierda-derecha: 
- * - Izquierda: lista de rutinas (para seleccionar)
- * - Derecha: detalle de la rutina seleccionada
+ * Panel de Mis Rutinas para gestionar rutinas del usuario.
  * 
- * En Syniverse aprendí que esta disposición es intuitiva:
- * el usuario ve un listado, selecciona, y ve los detalles.
- * Como el explorador de archivos de Windows.
+ * 🔥 IMPORTANTE (arquitectura):
  * 
- * @author César Alonso Morera Alpízar
+ * Este panel recibe una instancia de ControladorEjercicios desde la VentanaPrincipal.
+ * 
+ * Esto evita un problema muy común:
+ * ❌ Crear múltiples controladores con datos distintos en memoria
+ * 
+ * En sistemas reales, esto se conoce como:
+ * 👉 "Múltiples fuentes de verdad" (grave error)
+ * 
+ * Aquí aplico el principio:
+ * ✅ "Una sola fuente de verdad"
+ * 
+ * Todos los paneles y diálogos usan el mismo controlador,
+ * garantizando consistencia en los datos.
  */
 public class PanelMisRutinas extends JPanel {
     
     private Usuario usuarioActual;
+
+    // 🔥 NUEVO: Guardamos el controlador compartido
+    private ControladorEjercicios controladorEjercicios;
+
     private DefaultListModel<Rutina> modeloLista;
     private JList<Rutina> listaRutinas;
     private JTable tablaDetalle;
@@ -37,9 +47,20 @@ public class PanelMisRutinas extends JPanel {
     private JButton btnEditarRutina;
     private JButton btnEliminarRutina;
     private JButton btnExportarPDF;
+    private JButton btnRefrescar;
     
-    public PanelMisRutinas(Usuario usuario) {
+    /**
+     * Constructor del panel
+     * 
+     * @param usuario usuario actual
+     * @param controladorEjercicios instancia compartida del controlador
+     */
+    public PanelMisRutinas(Usuario usuario, ControladorEjercicios controladorEjercicios) {
         this.usuarioActual = usuario;
+
+        // 🔥 CLAVE: Guardar el controlador
+        this.controladorEjercicios = controladorEjercicios;
+
         initComponents();
         cargarRutinas();
     }
@@ -48,7 +69,6 @@ public class PanelMisRutinas extends JPanel {
         setLayout(new BorderLayout(10, 10));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         
-        // Panel izquierdo (lista de rutinas)
         JPanel panelIzquierdo = new JPanel(new BorderLayout(5, 5));
         panelIzquierdo.setBorder(BorderFactory.createTitledBorder("Mis Rutinas"));
         panelIzquierdo.setPreferredSize(new Dimension(250, 0));
@@ -60,7 +80,6 @@ public class PanelMisRutinas extends JPanel {
         
         add(panelIzquierdo, BorderLayout.WEST);
         
-        // Panel central (detalle de rutina)
         JPanel panelCentral = new JPanel(new BorderLayout(5, 5));
         panelCentral.setBorder(BorderFactory.createTitledBorder("Ejercicios de la rutina"));
         
@@ -68,7 +87,7 @@ public class PanelMisRutinas extends JPanel {
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
-                return false; // Solo lectura
+                return false;
             }
         };
         
@@ -77,23 +96,22 @@ public class PanelMisRutinas extends JPanel {
         
         add(panelCentral, BorderLayout.CENTER);
         
-        // Panel inferior (botones)
         JPanel panelBotones = new JPanel(new FlowLayout());
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
         
-        btnNuevaRutina = new JButton("➕ Nueva Rutina");
-        btnEditarRutina = new JButton("✏️ Editar");
-        btnEliminarRutina = new JButton("🗑️ Eliminar");
-        btnExportarPDF = new JButton("📄 Exportar PDF");
+        btnNuevaRutina = new JButton("Nueva Rutina");
+        btnEditarRutina = new JButton("Editar");
+        btnEliminarRutina = new JButton("Eliminar");
+        btnExportarPDF = new JButton("Exportar PDF");
+        btnRefrescar = new JButton("Refrescar Lista");
         
         panelBotones.add(btnNuevaRutina);
         panelBotones.add(btnEditarRutina);
         panelBotones.add(btnEliminarRutina);
         panelBotones.add(btnExportarPDF);
+        panelBotones.add(btnRefrescar);
         
         add(panelBotones, BorderLayout.SOUTH);
         
-        // Eventos
         listaRutinas.addListSelectionListener(e -> {
             if (!e.getValueIsAdjusting()) {
                 mostrarDetalleRutina();
@@ -104,6 +122,7 @@ public class PanelMisRutinas extends JPanel {
         btnEditarRutina.addActionListener(e -> editarRutina());
         btnEliminarRutina.addActionListener(e -> eliminarRutina());
         btnExportarPDF.addActionListener(e -> exportarPDF());
+        btnRefrescar.addActionListener(e -> refrescar());
     }
     
     private void cargarRutinas() {
@@ -111,6 +130,10 @@ public class PanelMisRutinas extends JPanel {
         for (Rutina r : usuarioActual.getRutinas()) {
             modeloLista.addElement(r);
         }
+    }
+    
+    public void refrescar() {
+        cargarRutinas();
     }
     
     private void mostrarDetalleRutina() {
@@ -130,111 +153,61 @@ public class PanelMisRutinas extends JPanel {
         }
     }
     
+    /**
+     * 🔥 MÉTODO CORREGIDO
+     */
     private void nuevaRutina() {
+
         DialogoRutina dialogo = new DialogoRutina(
             (JFrame) SwingUtilities.getWindowAncestor(this), 
             null, 
-            usuarioActual
+            usuarioActual,
+            controladorEjercicios // 🔥 AQUÍ ESTÁ LA SOLUCIÓN
         );
+
         dialogo.setVisible(true);
-        cargarRutinas();
+        refrescar();
     }
     
     private void editarRutina() {
         Rutina seleccionada = listaRutinas.getSelectedValue();
-        if (seleccionada == null) {
-            JOptionPane.showMessageDialog(this, 
-                "Seleccione una rutina para editar", 
-                "Aviso", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (seleccionada == null) return;
         
         DialogoRutina dialogo = new DialogoRutina(
             (JFrame) SwingUtilities.getWindowAncestor(this), 
             seleccionada, 
-            usuarioActual
+            usuarioActual,
+            controladorEjercicios // 🔥 TAMBIÉN AQUÍ
         );
+
         dialogo.setVisible(true);
-        cargarRutinas();
+        refrescar();
         mostrarDetalleRutina();
     }
     
-    /**
-     * Elimina una rutina con confirmación del usuario
-     * 
-     * En Syniverse aprendí que eliminar datos sin confirmación es peligroso.
-     * Una vez un compañero borró una configuración crítica sin querer...
-     * desde entonces, SIEMPRE confirmación.
-     */
     private void eliminarRutina() {
         Rutina seleccionada = listaRutinas.getSelectedValue();
-        if (seleccionada == null) {
-            JOptionPane.showMessageDialog(this, 
-                "Seleccione una rutina para eliminar", 
-                "Aviso", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (seleccionada == null) return;
         
-        // Diálogo de confirmación con el nombre de la rutina
-        int confirmacion = JOptionPane.showConfirmDialog(this,
-            "¿Está seguro de eliminar la rutina '" + seleccionada.getNombre() + "'?\n" +
-            "Esta acción no se puede deshacer.",
-            "Confirmar eliminación",
-            JOptionPane.YES_NO_OPTION,
-            JOptionPane.WARNING_MESSAGE);
-        
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            usuarioActual.eliminarRutina(seleccionada.getId());
-            cargarRutinas();
-            modeloTabla.setRowCount(0);
-            
-            JOptionPane.showMessageDialog(this, 
-                "✅ Rutina eliminada correctamente", 
-                "Éxito", 
-                JOptionPane.INFORMATION_MESSAGE);
-        }
+        usuarioActual.eliminarRutina(seleccionada.getId());
+        refrescar();
+        modeloTabla.setRowCount(0);
     }
     
-    /**
-     * Exporta la rutina seleccionada a PDF
-     * Usa el patrón Strategy (Exportador) para el formato
-     */
     private void exportarPDF() {
         Rutina seleccionada = listaRutinas.getSelectedValue();
-        if (seleccionada == null) {
-            JOptionPane.showMessageDialog(this, 
-                "Seleccione una rutina para exportar", 
-                "Aviso", 
-                JOptionPane.WARNING_MESSAGE);
-            return;
-        }
+        if (seleccionada == null) return;
         
-        // Diálogo para elegir dónde guardar
         JFileChooser fileChooser = new JFileChooser("exports");
-        fileChooser.setDialogTitle("Guardar rutina como PDF");
-        fileChooser.setSelectedFile(new java.io.File(
-            "Rutina_" + seleccionada.getNombre().replace(" ", "_") + ".pdf"));
         
         int resultado = fileChooser.showSaveDialog(this);
         
         if (resultado == JFileChooser.APPROVE_OPTION) {
             try {
                 Exportador exportador = new ExportadorPDF();
-                String ruta = fileChooser.getSelectedFile().getAbsolutePath();
-                
-                if (exportador.exportar(seleccionada, ruta)) {
-                    JOptionPane.showMessageDialog(this, 
-                        "✅ Rutina exportada correctamente a:\n" + ruta, 
-                        "Exportación exitosa", 
-                        JOptionPane.INFORMATION_MESSAGE);
-                }
+                exportador.exportar(seleccionada, fileChooser.getSelectedFile().getAbsolutePath());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, 
-                    "Error al exportar: " + ex.getMessage(), 
-                    "Error", 
-                    JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             }
         }
     }
