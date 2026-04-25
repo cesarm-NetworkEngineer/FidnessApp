@@ -32,16 +32,19 @@ public class VentanaLogin extends JFrame {
     private ControladorUsuarios controlador;
     
     // ===== PALETA DE COLORES CORPORATIVOS =====
-    private static final Color COLOR_FONDO = new Color(240, 240, 245);      // Gris muy suave (fondo)
-    private static final Color COLOR_TEXTO = new Color(25, 25, 112);         // Azul medianoche (texto normal)
-    private static final Color COLOR_TITULO = new Color(0, 51, 102);         // Azul marino (títulos y botones)
-    private static final Color COLOR_BOTON_LOGIN = new Color(220, 220, 230);   // Gris claro (fondo botón login)
-    private static final Color COLOR_BOTON_REGISTRO = new Color(200, 200, 210); // Gris medio (fondo botón registro)
+    private static final Color COLOR_FONDO = new Color(240, 240, 245);
+    private static final Color COLOR_TEXTO = new Color(25, 25, 112);
+    private static final Color COLOR_TITULO = new Color(0, 51, 102);
+    private static final Color COLOR_BOTON_LOGIN = new Color(220, 220, 230);
+    private static final Color COLOR_BOTON_REGISTRO = new Color(200, 200, 210);
     
     public VentanaLogin() {
+        System.out.println("🔧 VentanaLogin: Constructor iniciado");
         this.controlador = new ControladorUsuarios();
+        System.out.println("🔧 VentanaLogin: Controlador creado");
         initComponents();
         configurarVentana();
+        System.out.println("✅ VentanaLogin: Inicialización completa");
     }
     
     private void configurarVentana() {
@@ -50,13 +53,12 @@ public class VentanaLogin extends JFrame {
         setSize(450, 400);
         setLocationRelativeTo(null);
         setResizable(false);
+        System.out.println("🔧 VentanaLogin: Configuración de ventana completada");
     }
     
-    /**
-     * Inicializa todos los componentes gráficos
-     * Uso GridBagLayout porque me da control preciso de dónde va cada cosa
-     */
     private void initComponents() {
+        System.out.println("🔧 VentanaLogin: Iniciando componentes gráficos...");
+        
         JPanel panel = new JPanel(new GridBagLayout());
         panel.setBorder(BorderFactory.createEmptyBorder(30, 30, 30, 30));
         panel.setBackground(COLOR_FONDO);
@@ -65,7 +67,6 @@ public class VentanaLogin extends JFrame {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.insets = new Insets(8, 8, 8, 8);
         
-        // ===== TÍTULO PRINCIPAL (Azul oscuro) =====
         JLabel lblTitulo = new JLabel("🏋️‍♂️ FIDNESS", SwingConstants.CENTER);
         lblTitulo.setFont(new Font("Arial", Font.BOLD, 28));
         lblTitulo.setForeground(COLOR_TITULO);
@@ -77,7 +78,6 @@ public class VentanaLogin extends JFrame {
         gbc.gridwidth = 2;
         panel.add(lblTitulo, gbc);
         
-        // ===== SUBTÍTULO (Azul medianoche) =====
         JLabel lblSubtitulo = new JLabel("Tu compañero de entrenamiento", SwingConstants.CENTER);
         lblSubtitulo.setFont(new Font("Arial", Font.ITALIC, 12));
         lblSubtitulo.setForeground(COLOR_TEXTO);
@@ -87,11 +87,9 @@ public class VentanaLogin extends JFrame {
         gbc.gridy = 1;
         panel.add(lblSubtitulo, gbc);
         
-        // Espaciador
         gbc.gridy = 2;
         panel.add(Box.createVerticalStrut(15), gbc);
         
-        // ===== CAMPO EMAIL =====
         gbc.gridwidth = 1;
         gbc.gridy = 3;
         gbc.gridx = 0;
@@ -109,7 +107,6 @@ public class VentanaLogin extends JFrame {
         gbc.gridx = 1;
         panel.add(txtEmail, gbc);
         
-        // ===== CAMPO CONTRASEÑA =====
         gbc.gridy = 4;
         gbc.gridx = 0;
         
@@ -126,7 +123,6 @@ public class VentanaLogin extends JFrame {
         gbc.gridx = 1;
         panel.add(txtPassword, gbc);
         
-        // ===== MENSAJE DE AYUDA =====
         gbc.gridy = 5;
         gbc.gridx = 0;
         gbc.gridwidth = 2;
@@ -138,10 +134,9 @@ public class VentanaLogin extends JFrame {
         lblAyuda.setOpaque(true);
         panel.add(lblAyuda, gbc);
         
-        // ===== BOTÓN INICIAR SESIÓN (Fondo gris claro, texto azul oscuro) =====
         btnLogin = new JButton("INICIAR SESIÓN");
-        btnLogin.setBackground(COLOR_BOTON_LOGIN);      // Fondo gris claro
-        btnLogin.setForeground(COLOR_TITULO);          // Texto azul oscuro
+        btnLogin.setBackground(COLOR_BOTON_LOGIN);
+        btnLogin.setForeground(COLOR_TITULO);
         btnLogin.setFont(new Font("Arial", Font.BOLD, 14));
         btnLogin.setFocusPainted(false);
         btnLogin.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -151,10 +146,9 @@ public class VentanaLogin extends JFrame {
         gbc.insets = new Insets(20, 8, 5, 8);
         panel.add(btnLogin, gbc);
         
-        // ===== BOTÓN REGISTRARSE (Fondo gris medio, texto azul oscuro) =====
         btnRegistrar = new JButton("REGISTRARSE");
-        btnRegistrar.setBackground(COLOR_BOTON_REGISTRO); // Fondo gris medio
-        btnRegistrar.setForeground(COLOR_TITULO);         // Texto azul oscuro
+        btnRegistrar.setBackground(COLOR_BOTON_REGISTRO);
+        btnRegistrar.setForeground(COLOR_TITULO);
         btnRegistrar.setFont(new Font("Arial", Font.BOLD, 14));
         btnRegistrar.setFocusPainted(false);
         btnRegistrar.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -164,22 +158,25 @@ public class VentanaLogin extends JFrame {
         gbc.insets = new Insets(5, 8, 10, 8);
         panel.add(btnRegistrar, gbc);
         
-        // ===== EVENTOS =====
         btnLogin.addActionListener(e -> iniciarSesion());
         btnRegistrar.addActionListener(e -> mostrarRegistro());
         txtPassword.addActionListener(e -> iniciarSesion());
         
         add(panel);
+        System.out.println("✅ VentanaLogin: Componentes gráficos creados");
     }
     
-    /**
-     * Intenta iniciar sesión con las credenciales ingresadas
-     */
     private void iniciarSesion() {
+        System.out.println("\n🔘 Botón de login presionado");
+        
         String email = txtEmail.getText().trim();
         String password = new String(txtPassword.getPassword());
         
+        System.out.println("📧 Email ingresado: '" + email + "'");
+        System.out.println("🔒 Password ingresada: '" + password + "'");
+        
         if (email.isEmpty() || password.isEmpty()) {
+            System.out.println("❌ Campos vacíos");
             JOptionPane.showMessageDialog(this, 
                 "Por favor complete todos los campos", 
                 "Campos vacíos", 
@@ -188,18 +185,34 @@ public class VentanaLogin extends JFrame {
         }
         
         try {
+            System.out.println("🔄 Llamando a controlador.iniciarSesion()...");
             Usuario usuario = controlador.iniciarSesion(email, password);
+            System.out.println("📊 Resultado del controlador: " + (usuario != null ? usuario.getEmail() : "null"));
             
             if (usuario != null) {
+                System.out.println("✅ LOGIN EXITOSO para: " + usuario.getEmail());
+                System.out.println("   👤 Nombre: " + usuario.getNombre());
+                System.out.println("   👑 Admin: " + usuario.isEsAdmin());
+                
                 JOptionPane.showMessageDialog(this, 
                     "¡Bienvenido " + usuario.getNombre() + "!", 
                     "Login exitoso", 
                     JOptionPane.INFORMATION_MESSAGE);
                 
-                new VentanaPrincipal(usuario).setVisible(true);
+                System.out.println("🔄 Creando VentanaPrincipal...");
+                VentanaPrincipal ventana = new VentanaPrincipal(usuario);
+                System.out.println("✅ VentanaPrincipal creada");
+                
+                System.out.println("🔄 Haciendo visible...");
+                ventana.setVisible(true);
+                System.out.println("✅ VentanaPrincipal visible");
+                
+                System.out.println("🔄 Cerrando ventana de login...");
                 dispose();
+                System.out.println("✅ VentanaLogin cerrada\n");
                 
             } else {
+                System.out.println("❌ LOGIN FALLIDO: Credenciales incorrectas");
                 JOptionPane.showMessageDialog(this, 
                     "Email o contraseña incorrectos", 
                     "Error de autenticación", 
@@ -208,6 +221,8 @@ public class VentanaLogin extends JFrame {
                 txtPassword.requestFocus();
             }
         } catch (Exception ex) {
+            System.out.println("❌ EXCEPCIÓN: " + ex.getMessage());
+            ex.printStackTrace();
             JOptionPane.showMessageDialog(this, 
                 "Error al conectar con el sistema: " + ex.getMessage(), 
                 "Error", 
@@ -215,10 +230,9 @@ public class VentanaLogin extends JFrame {
         }
     }
     
-    /**
-     * Muestra diálogo de registro con los mismos colores corporativos
-     */
     private void mostrarRegistro() {
+        System.out.println("🔘 Botón de registro presionado");
+        
         JTextField txtNombre = new JTextField();
         txtNombre.setBackground(Color.WHITE);
         txtNombre.setForeground(COLOR_TEXTO);

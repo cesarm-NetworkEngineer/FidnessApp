@@ -11,8 +11,6 @@
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/servidor/ManejadorCliente.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/controlador/ControladorEjercicios.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/vista/VentanaLogin.java</file>
-            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/test/TestBD.java</file>
-            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/test/ImprimirBD.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/Exportador.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/ExportadorPDF.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/Ejercicio.java</file>
@@ -20,6 +18,11 @@
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/DetalleRutina.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/Usuario.java</file>
             <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/vista/DialogoRutina.java</file>
+            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/modelo/Rutina.java</file>
+            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/main/TestDirecto.java</file>
+            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/main/TestLoginControlador.java</file>
+            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/vista/PanelAdministrador.java</file>
+            <file>file:/C:/Users/cesar/Documents/NetBeansProjects/Avance%202%20Fitnessapp%20Morera%20Cesar/FidnessApp/src/vista/PanelMisRutinas.java</file>
         </group>
     </open-files>
 </project-private>

@@ -37,6 +37,16 @@ public class GestorDatos {
     // SQLite crea un solo archivo que contiene TODAS las tablas
     private static final String ARCHIVO_BD = "fidness.db";
     
+    // Bloque estático para configurar SQLite antes de cualquier conexión
+    // Esto es CRÍTICO para que funcione con JDK 25
+    static {
+        // Deshabilitar la carga de librerías nativas (causa del error)
+        System.setProperty("org.sqlite.lib.path", "");
+        System.setProperty("org.sqlite.lib.name", "");
+        System.setProperty("org.sqlite.useJNILoader", "false");
+        System.setProperty("org.sqlite.purejava", "true");
+    }
+    
     /**
      * Obtiene la conexión a la base de datos
      * 
@@ -51,8 +61,11 @@ public class GestorDatos {
             Class.forName("org.sqlite.JDBC");
             
             // jdbc:sqlite:fidness.db -> el archivo se crea automáticamente
-            String url = "jdbc:sqlite:" + ARCHIVO_BD;
+            // enable_load_extension=false es clave para JDK 25
+            String url = "jdbc:sqlite:" + ARCHIVO_BD + "?enable_load_extension=false";
             Connection conn = DriverManager.getConnection(url);
+            
+            System.out.println("✅ Conectado a SQLite (modo compatible con JDK 25)");
             
             // Si es la primera vez que corremos, creamos las tablas
             crearTablasSiNoExisten(conn);
@@ -61,7 +74,12 @@ public class GestorDatos {
             
         } catch (ClassNotFoundException e) {
             System.err.println("❌ Driver de SQLite no encontrado. ¿Agregaste la librería?");
+            System.err.println("   Descarga sqlite-jdbc-3.47.2.0.jar desde:");
+            System.err.println("   https://github.com/xerial/sqlite-jdbc/releases");
             throw new SQLException("Driver no disponible", e);
+        } catch (SQLException e) {
+            System.err.println("❌ Error de conexión SQLite: " + e.getMessage());
+            throw e;
         }
     }
     

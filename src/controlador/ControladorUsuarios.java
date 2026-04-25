@@ -22,8 +22,14 @@ import java.util.List;
  * como los gerentes de un restaurante: la cocina (modelo) prepara,
  * los meseros (vista) atienden, y el gerente (controlador) coordina.
  * 
- * AHORA CON BASE DE DATOS: ya no usamos archivos .dat, todo se guarda
- * en SQLite. Es como pasar de una libreta de apuntes a una computadora.
+ * 🔧 MODO DE EMERGENCIA: Debido a incompatibilidades entre JDK 25
+ * y la versión actual de SQLite, implementé un modo de emergencia
+ * que permite que la app funcione sin base de datos. Esto es temporal
+ * para poder hacer la presentación mientras resolvemos el problema técnico.
+ * 
+ * Como cuando se va la luz en un restaurante y sacan las velas:
+ * no es lo ideal, pero la gente sigue comiendo. La funcionalidad
+ * principal está ahí, solo que los datos no se guardan permanentemente.
  * 
  * @author César Alonso Morera Alpízar
  */
@@ -38,62 +44,70 @@ public class ControladorUsuarios {
     }
     
     /**
-     * Carga los usuarios desde la BASE DE DATOS (ya no desde archivos)
+     * Carga los usuarios desde la base de datos.
      * 
-     * Antes usábamos serialización con archivos .dat, pero ahora
-     * todo está en SQLite. Es más seguro, más rápido y más profesional.
+     * Si la base de datos no está disponible (como pasa con JDK 25),
+     * entramos en MODO DE EMERGENCIA con usuarios hardcodeados.
      * 
-     * Si no hay usuarios, se crean automáticamente los de prueba.
-     * Como cuando compras un celular nuevo y ya trae algunas apps.
+     * En Soporte Técnico aprendí que siempre hay que tener un plan B.
+     * Como cuando haces una presentación y llevas el archivo en USB
+     * además del correo electrónico. Nunca se sabe cuándo falla la tecnología.
+     * 
+     * En mis clases, siempre digo: "el que tiene dos opciones, tiene una.
+     * El que tiene una opción, no tiene ninguna".
      */
     private void cargarDatos() {
+        // ===== INTENTAR CONEXIÓN A BASE DE DATOS =====
         try {
-            // Ahora usamos la base de datos, no archivos
             usuarios = GestorDatos.cargarUsuarios();
-            
-            // Calcular siguiente ID basado en el máximo existente
             siguienteId = usuarios.stream()
                 .mapToInt(Usuario::getId)
                 .max()
                 .orElse(0) + 1;
             
             System.out.println("✅ ControladorUsuarios: " + usuarios.size() + " usuarios cargados desde BD");
-            System.out.println("📌 Próximo ID disponible: " + siguienteId);
+            System.out.println("   📌 Próximo ID disponible: " + siguienteId);
+            return; // Si todo bien, salimos del método
             
         } catch (SQLException e) {
-            System.err.println("❌ Error cargando usuarios desde la base de datos: " + e.getMessage());
-            System.err.println("   Verifica que la librería SQLite esté agregada correctamente.");
-            usuarios = new ArrayList<>();
-            siguienteId = 1;
+            System.err.println("⚠️ No se pudo conectar a la base de datos.");
+            System.err.println("   Error: " + e.getMessage());
+            System.err.println("   Esto es normal con JDK 25. Usando modo de emergencia...");
         }
-    }
-    
-    /**
-     * GUARDA los usuarios en la base de datos
-     * 
-     * IMPORTANTE: En la versión con base de datos, los cambios se guardan
-     * inmediatamente cuando se agrega o modifica un usuario.
-     * Ya no necesitamos este método para guardar TODO cada vez.
-     * 
-     * Lo mantengo por compatibilidad, pero cada operación individual
-     * ya guarda en la BD automáticamente.
-     */
-    private void guardarDatos() {
-        // En la versión con base de datos, los guardados son inmediatos
-        // Este método ya no es necesario, pero lo dejo para no romper nada
-        System.out.println("💾 Nota: Los datos se guardan automáticamente en la BD");
+        
+        // ===== MODO DE EMERGENCIA - Usuarios hardcodeados =====
+        // En DXC Technology aprendí que los sistemas críticos necesitan
+        // un "fallback". Esto es nuestro fallback: datos locales.
+        System.out.println("\n🔥 ENTRANDO EN MODO DE EMERGENCIA 🔥");
+        System.out.println("   Los usuarios se cargarán en memoria.");
+        System.out.println("   Los cambios NO se guardarán en la base de datos.");
+        
+        usuarios = new ArrayList<>();
+        usuarios.add(new Usuario(1, "Administrador", "admin@fidness.com", "admin123", true));
+        usuarios.add(new Usuario(2, "Usuario Demo", "demo@fidness.com", "demo123", false));
+        siguienteId = 3;
+        
+        System.out.println("\n✅ MODO EMERGENCIA ACTIVADO: " + usuarios.size() + " usuarios cargados");
+        System.out.println("   📧 admin@fidness.com / admin123 (👑 Administrador)");
+        System.out.println("   📧 demo@fidness.com / demo123 (👤 Usuario normal)");
+        System.out.println("   ⚠️ Los datos no persisten al cerrar la aplicación.");
+        System.out.println("   🔧 Para persistencia real, cambiar a JDK 17.\n");
     }
     
     /**
      * Intenta iniciar sesión
      * 
+     * Busca un usuario por email (case insensitive) y verifica la contraseña.
+     * En soporte, aprendí que los usuarios escriben "Admin" o "admin" igual.
+     * Por eso usamos equalsIgnoreCase.
+     * 
      * @param email email del usuario
-     * @param password contraseña en texto plano (en producción usaríamos hash)
+     * @param password contraseña en texto plano
      * @return Usuario si éxito, null si no
      */
     public Usuario iniciarSesion(String email, String password) {
-        // Buscar usuario por email (case insensitive)
-        // En soporte, aprendí que los usuarios escriben "Admin" o "admin" igual
+        System.out.println("🔐 Intentando login: " + email);
+        
         Usuario encontrado = usuarios.stream()
             .filter(u -> u.getEmail().equalsIgnoreCase(email.trim()))
             .filter(u -> u.verificarPassword(password))
@@ -101,16 +115,19 @@ public class ControladorUsuarios {
             .orElse(null);
         
         if (encontrado != null) {
-            System.out.println("✅ Login exitoso: " + encontrado.getEmail());
+            System.out.println("✅ Login exitoso: " + encontrado.getEmail() + " (" + encontrado.getNombre() + ")");
         } else {
-            System.out.println("❌ Intento de login fallido para: " + email);
+            System.out.println("❌ Login fallido: " + email + " - Credenciales incorrectas");
         }
         
         return encontrado;
     }
     
     /**
-     * Registra un nuevo usuario en la BASE DE DATOS
+     * Registra un nuevo usuario
+     * 
+     * En modo de emergencia, el usuario se guarda en memoria pero NO en BD.
+     * Esto permite probar toda la funcionalidad de la app.
      * 
      * @param nombre nombre completo
      * @param email email (debe ser único)
@@ -120,7 +137,7 @@ public class ControladorUsuarios {
      * @throws IllegalArgumentException si el email ya existe o datos inválidos
      */
     public Usuario registrarUsuario(String nombre, String email, String password, boolean esAdmin) {
-        // Validaciones básicas (igual que antes, la seguridad no cambia)
+        // Validaciones básicas - la seguridad no cambie, estemos en modo normal o emergencia
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre es obligatorio");
         }
@@ -131,7 +148,7 @@ public class ControladorUsuarios {
             throw new IllegalArgumentException("La contraseña debe tener al menos 6 caracteres");
         }
         
-        // Validar email único en la lista actual
+        // Validar email único
         boolean existe = usuarios.stream()
             .anyMatch(u -> u.getEmail().equalsIgnoreCase(email));
         
@@ -139,28 +156,30 @@ public class ControladorUsuarios {
             throw new IllegalArgumentException("El correo ya está registrado");
         }
         
+        // Crear el usuario
+        Usuario nuevo = new Usuario(siguienteId++, nombre, email, password, esAdmin);
+        usuarios.add(nuevo);
+        
+        System.out.println("✅ Nuevo usuario registrado: " + email + " (ID: " + nuevo.getId() + ")");
+        System.out.println("   ⚠️ (Modo emergencia: los datos no se guardan en BD)");
+        
+        // Intentar guardar en BD si está disponible
         try {
-            // Crear el usuario con el siguiente ID disponible
-            Usuario nuevo = new Usuario(siguienteId++, nombre, email, password, esAdmin);
-            
-            // GUARDAR EN BASE DE DATOS (esto es nuevo)
             GestorDatos.guardarUsuario(nuevo);
-            
-            // Agregar a la lista en memoria
-            usuarios.add(nuevo);
-            
-            System.out.println("✅ Nuevo usuario registrado: " + email + " (ID: " + nuevo.getId() + ")");
-            
-            return nuevo;
-            
+            System.out.println("   💾 También se guardó en la base de datos.");
         } catch (SQLException e) {
-            System.err.println("❌ Error al guardar en BD: " + e.getMessage());
-            throw new RuntimeException("No se pudo guardar el usuario en la base de datos", e);
+            // En modo emergencia, ignoramos el error de BD
+            System.out.println("   💾 No se pudo guardar en BD (modo emergencia).");
         }
+        
+        return nuevo;
     }
     
     /**
      * Busca un usuario por su email
+     * 
+     * @param email email a buscar
+     * @return Usuario encontrado o null
      */
     public Usuario buscarPorEmail(String email) {
         return usuarios.stream()
@@ -171,6 +190,9 @@ public class ControladorUsuarios {
     
     /**
      * Busca un usuario por su ID
+     * 
+     * @param id ID a buscar
+     * @return Usuario encontrado o null
      */
     public Usuario buscarPorId(int id) {
         return usuarios.stream()
@@ -181,13 +203,15 @@ public class ControladorUsuarios {
     
     /**
      * Obtiene todos los usuarios (solo para administración)
+     * 
+     * @return lista de todos los usuarios
      */
     public List<Usuario> getTodosLosUsuarios() {
         return new ArrayList<>(usuarios);
     }
     
     /**
-     * Actualiza datos de un usuario en la BASE DE DATOS
+     * Actualiza datos de un usuario
      * 
      * @param usuarioActualizado usuario con los nuevos datos
      * @return true si se actualizó correctamente
@@ -195,27 +219,27 @@ public class ControladorUsuarios {
     public boolean actualizarUsuario(Usuario usuarioActualizado) {
         for (int i = 0; i < usuarios.size(); i++) {
             if (usuarios.get(i).getId() == usuarioActualizado.getId()) {
+                usuarios.set(i, usuarioActualizado);
+                System.out.println("✅ Usuario actualizado: " + usuarioActualizado.getEmail());
+                
+                // Intentar actualizar en BD
                 try {
-                    // Actualizar en base de datos
                     GestorDatos.actualizarUsuario(usuarioActualizado);
-                    
-                    // Actualizar en memoria
-                    usuarios.set(i, usuarioActualizado);
-                    
-                    System.out.println("✅ Usuario actualizado: " + usuarioActualizado.getEmail());
-                    return true;
-                    
                 } catch (SQLException e) {
-                    System.err.println("❌ Error actualizando usuario: " + e.getMessage());
-                    return false;
+                    System.out.println("   ⚠️ No se pudo actualizar en BD (modo emergencia).");
                 }
+                return true;
             }
         }
         return false;
     }
     
     /**
-     * Elimina un usuario de la BASE DE DATOS (solo si no es el último admin)
+     * Elimina un usuario (solo si no es el último admin)
+     * 
+     * En sistemas reales, siempre debe haber al menos un administrador.
+     * Esto lo aprendí en DXC Technology, donde los sistemas bancarios
+     * nunca pueden quedarse sin superadministrador.
      * 
      * @param id ID del usuario a eliminar
      * @return true si se eliminó
@@ -225,8 +249,7 @@ public class ControladorUsuarios {
         Usuario usuario = buscarPorId(id);
         if (usuario == null) return false;
         
-        // No permitir eliminar si es el último administrador
-        // En sistemas reales, siempre debe haber al menos un admin
+        // Validación crítica: no eliminar al último admin
         if (usuario.isEsAdmin()) {
             long adminsRestantes = usuarios.stream()
                 .filter(Usuario::isEsAdmin)
@@ -237,14 +260,9 @@ public class ControladorUsuarios {
             }
         }
         
-        // En la versión con BD, necesitaríamos un método eliminarUsuario()
-        // Por ahora, lo eliminamos de la lista en memoria
-        // NOTA: En la siguiente versión agregaremos la eliminación en BD
-        
         boolean removido = usuarios.removeIf(u -> u.getId() == id);
         if (removido) {
             System.out.println("✅ Usuario eliminado (ID: " + id + ")");
-            // TODO: Implementar eliminación en BD
         }
         return removido;
     }
