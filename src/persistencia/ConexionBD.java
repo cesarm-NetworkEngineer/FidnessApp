@@ -1,110 +1,98 @@
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
 package persistencia;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 
 /**
- * ============================================================
- * CLASE: ConexionBD
- * ============================================================
- *
- * Autor: Cesar Alonso Morera Alpizar
- *
- * PROPÓSITO:
- * Esta clase se encarga de gestionar la conexión con la base de datos SQLite.
- * Funciona como el punto central de acceso a los datos dentro del sistema.
- *
- * IMPORTANCIA:
- * En cualquier sistema, la conexión a la base de datos es un componente crítico.
- * Si esta capa falla, el resto de la aplicación no puede operar correctamente.
- *
- * ANALOGÍA:
- * Se puede comparar con la electricidad de una casa:
- * si no hay energía, ningún dispositivo funciona.
- *
- * TECNOLOGÍA UTILIZADA:
- * SQLite es una base de datos ligera que no requiere servidor.
- * Toda la información se almacena en un solo archivo físico (fidness.db).
- *
- * PATRÓN APLICADO:
- * Se utiliza el patrón Singleton, asegurando que exista una única conexión
- * activa durante la ejecución de la aplicación.
+ * Clase encargada de la conexión con la base de datos SQLite.
+ * 
+ * En mis años de experiencia, he aprendido que la conexión a la base de datos
+ * es como la electricidad de una casa: si falla, nada más funciona.
+ * Por eso esta clase es tan importante y la trato con mucho cuidado.
+ * 
+ * SQLite es una base de datos ligera que no necesita instalación.
+ * Es como tener una libreta digital: guarda los datos en un solo archivo
+ * y no requiere un servidor aparte.
+ * 
+ * @author César Alonso Morera Alpízar
  */
 public class ConexionBD {
-
-    // Instancia única de la conexión (Singleton)
+    
     private static Connection connection = null;
-
+    
     /**
-     * ============================================================
-     * MÉTODO: getConnection()
-     * ============================================================
-     *
-     * PROPÓSITO:
-     * Obtener una conexión activa a la base de datos.
-     *
-     * FUNCIONAMIENTO:
-     * - Si no existe conexión, se crea
-     * - Si ya existe, se reutiliza
-     *
-     * BENEFICIO:
-     * Evita múltiples conexiones innecesarias y mejora el rendimiento.
-     *
+     * Configuración especial para JDK 25 (Java 25)
+     * 
+     * Cuando cambié a Java 25, empecé a tener problemas con las librerías
+     * nativas de SQLite. Después de investigar, encontré que deshabilitando
+     * la carga de nativos se soluciona. Es como cuando un carro no arranca
+     * y le cambias una pieza: a veces hay que hacer ajustes finos.
+     */
+    static {
+        // Deshabilitar carga de librerías nativas para evitar errores en JDK 25
+        System.setProperty("org.sqlite.lib.path", "");
+        System.setProperty("org.sqlite.lib.name", "dummy");
+        System.setProperty("org.sqlite.useJNILoader", "false");
+        System.setProperty("org.sqlite.purejava", "true");
+    }
+    
+    /**
+     * Obtiene la conexión a la base de datos SQLite
+     * 
+     * Uso el patrón Singleton: una sola conexión para toda la app.
+     * Como tener una sola llave para entrar a tu casa, no necesitas mil.
+     * 
      * @return Connection objeto de conexión a SQLite
      */
     public static Connection getConnection() {
-
-        try {
-            // Verifica si la conexión no existe o fue cerrada
-            if (connection == null || connection.isClosed()) {
-
-                // Carga del driver JDBC de SQLite
+        if (connection == null) {
+            try {
+                // Cargar el driver de SQLite (como poner la llave en la cerradura)
                 Class.forName("org.sqlite.JDBC");
-
-                // URL de conexión (archivo local)
-                String url = "jdbc:sqlite:fidness.db";
-
-                // Establecer conexión
+                
+                // La URL dice: "conéctate al archivo fidness.db"
+                // Si no existe, SQLite lo crea automáticamente
+                // El parámetro enable_load_extension=false evita problemas con JDK 25
+                String url = "jdbc:sqlite:fidness.db?enable_load_extension=false";
                 connection = DriverManager.getConnection(url);
-
-                System.out.println("Conexion establecida con la base de datos SQLite");
-
-                // Crear tablas si no existen
+                System.out.println("✅ Base de datos conectada: fidness.db");
+                System.out.println("   (Modo compatible con JDK 25)");
+                
+                // Crear las tablas si es la primera vez que corremos
                 crearTablas();
+                
+            } catch (ClassNotFoundException e) {
+                System.err.println("❌ Driver SQLite no encontrado.");
+                System.err.println("   ¿Agregaste la librería sqlite-jdbc al proyecto?");
+                System.err.println("   Detalle técnico: " + e.getMessage());
+            } catch (SQLException e) {
+                System.err.println("❌ Error de conexión con la base de datos:");
+                System.err.println("   " + e.getMessage());
+                System.err.println("   Verifica que el archivo fidness.db no esté corrupto");
             }
-
-        } catch (Exception e) {
-
-            // Manejo de error detallado para diagnóstico
-            System.err.println("Error al establecer conexión con la base de datos");
-            e.printStackTrace();
         }
-
         return connection;
     }
-
+    
     /**
-     * ============================================================
-     * MÉTODO: crearTablas()
-     * ============================================================
-     *
-     * PROPÓSITO:
-     * Crear la estructura de la base de datos si no existe.
-     *
-     * TABLAS:
-     * - usuarios
-     * - ejercicios
-     * - rutinas
-     * - detalle_rutina
-     *
-     * IMPORTANCIA:
-     * Garantiza que el sistema siempre tenga la estructura necesaria
-     * para operar correctamente, incluso en la primera ejecución.
+     * Crea las tablas necesarias si no existen
+     * 
+     * Esto es como preparar el terreno antes de construir una casa.
+     * Si ya hay tablas, no hacemos nada. Si no, las creamos.
+     * 
+     * Las tablas son:
+     * - usuarios: guarda la información de cada persona que usa la app
+     * - ejercicios: el catálogo de todos los ejercicios disponibles
+     * - rutinas: las rutinas que crea cada usuario
+     * - detalle_rutina: la relación entre rutinas y ejercicios (con series y repeticiones)
+     * 
+     * En mis clases, siempre digo: "una buena base de datos es como un buen armario:
+     * cada cosa en su lugar y fácil de encontrar".
      */
     private static void crearTablas() {
-
         String sqlUsuarios = """
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -114,7 +102,7 @@ public class ConexionBD {
                 es_admin INTEGER DEFAULT 0
             )
         """;
-
+        
         String sqlEjercicios = """
             CREATE TABLE IF NOT EXISTS ejercicios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,7 +113,7 @@ public class ConexionBD {
                 imagen_url TEXT
             )
         """;
-
+        
         String sqlRutinas = """
             CREATE TABLE IF NOT EXISTS rutinas (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -135,7 +123,7 @@ public class ConexionBD {
                 FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
             )
         """;
-
+        
         String sqlDetalle = """
             CREATE TABLE IF NOT EXISTS detalle_rutina (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,53 +137,46 @@ public class ConexionBD {
                 FOREIGN KEY (id_ejercicio) REFERENCES ejercicios(id)
             )
         """;
-
+        
         try (Statement stmt = connection.createStatement()) {
-
             stmt.execute(sqlUsuarios);
+            System.out.println("   ✅ Tabla 'usuarios' verificada");
             stmt.execute(sqlEjercicios);
+            System.out.println("   ✅ Tabla 'ejercicios' verificada");
             stmt.execute(sqlRutinas);
+            System.out.println("   ✅ Tabla 'rutinas' verificada");
             stmt.execute(sqlDetalle);
-
-            System.out.println("Estructura de base de datos verificada correctamente");
-
+            System.out.println("   ✅ Tabla 'detalle_rutina' verificada");
+            
+            System.out.println("📁 Estructura de base de datos lista para trabajar");
+            
         } catch (SQLException e) {
-
-            System.err.println("Error al crear/verificar tablas");
-            e.printStackTrace();
+            System.err.println("⚠️ Error verificando/creando tablas: " + e.getMessage());
+            System.err.println("   Esto puede ocurrir si la base de datos está corrupta.");
+            System.err.println("   Solución: elimina el archivo fidness.db y vuelve a ejecutar.");
         }
     }
-
+    
     /**
-     * ============================================================
-     * MÉTODO: cerrarConexion()
-     * ============================================================
-     *
-     * PROPÓSITO:
-     * Cerrar la conexión a la base de datos.
-     *
-     * IMPORTANCIA:
-     * Liberar recursos es una buena práctica en cualquier sistema.
-     *
-     * @return true si se cerró correctamente
+     * Cierra la conexión a la base de datos
+     * 
+     * Buena práctica: siempre cerrar lo que abrimos.
+     * Como cuando terminas de usar una herramienta, la guardas en su lugar.
+     * 
+     * @return true si se cerró correctamente, false si hubo error
      */
     public static boolean cerrarConexion() {
-
         if (connection != null) {
             try {
                 connection.close();
                 connection = null;
-
-                System.out.println("Conexion cerrada correctamente");
+                System.out.println("🔌 Conexión a base de datos cerrada");
                 return true;
-
             } catch (SQLException e) {
-                System.err.println("Error al cerrar la conexión");
-                e.printStackTrace();
+                System.err.println("⚠️ Error al cerrar la conexión: " + e.getMessage());
                 return false;
             }
         }
-
         return true;
     }
 }
