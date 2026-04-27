@@ -9,6 +9,8 @@ import modelo.TipoEjercicio;
 import controlador.ControladorEjercicios;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class PanelAdministrador extends JPanel {
@@ -23,6 +25,16 @@ public class PanelAdministrador extends JPanel {
     private JButton btnEliminar;
     private JButton btnActualizar;
     
+    // 🎨 Colores profesionales y sobrios
+    private static final Color COLOR_FONDO = new Color(245, 245, 250);   // Gris muy claro
+    private static final Color COLOR_TEXTO = new Color(50, 50, 70);       // Gris oscuro
+    private static final Color COLOR_TABLA_FONDO = Color.WHITE;
+    private static final Color COLOR_ENCABEZADO = new Color(220, 220, 230);
+    private static final Color COLOR_BOTON_PRIMARY = new Color(70, 130, 180);   // Azul acero
+    private static final Color COLOR_BOTON_EDIT = new Color(100, 100, 140);     // Gris azulado
+    private static final Color COLOR_BOTON_DELETE = new Color(180, 70, 70);     // Rojo suave
+    private static final Color COLOR_BOTON_REFRESH = new Color(80, 120, 100);   // Verde musgo
+    
     public PanelAdministrador(ControladorEjercicios controlador, PanelEjercicios panelEjercicios) {
         this.controlador = controlador;
         this.panelEjercicios = panelEjercicios;
@@ -32,13 +44,15 @@ public class PanelAdministrador extends JPanel {
     
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
-        setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        setBorder(new EmptyBorder(15, 15, 15, 15));
+        setBackground(COLOR_FONDO);
         
-        JLabel lblTitulo = new JLabel("Administracion del Catalogo de Ejercicios", SwingConstants.CENTER);
-        lblTitulo.setFont(new Font("Arial", Font.BOLD, 18));
+        JLabel lblTitulo = new JLabel("Administración del Catálogo de Ejercicios", SwingConstants.CENTER);
+        lblTitulo.setFont(new Font("Segoe UI", Font.BOLD, 18));
+        lblTitulo.setForeground(COLOR_TEXTO);
         add(lblTitulo, BorderLayout.NORTH);
         
-        String[] columnas = {"ID", "Nombre", "Tipo", "Descripcion", "Video URL", "Imagen URL"};
+        String[] columnas = {"ID", "Nombre", "Tipo", "Descripción", "Video URL", "Imagen URL"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -47,16 +61,31 @@ public class PanelAdministrador extends JPanel {
         };
         
         tablaEjercicios = new JTable(modeloTabla);
-        tablaEjercicios.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        tablaEjercicios.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        tablaEjercicios.setForeground(COLOR_TEXTO);
+        tablaEjercicios.setBackground(COLOR_TABLA_FONDO);
+        tablaEjercicios.setRowHeight(28);
+        tablaEjercicios.setSelectionBackground(new Color(200, 210, 230));
+        
+        JTableHeader header = tablaEjercicios.getTableHeader();
+        header.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        header.setForeground(COLOR_TEXTO);
+        header.setBackground(COLOR_ENCABEZADO);
+        
+        tablaEjercicios.getColumnModel().getColumn(0).setPreferredWidth(50);
+        tablaEjercicios.getColumnModel().getColumn(1).setPreferredWidth(180);
+        tablaEjercicios.getColumnModel().getColumn(2).setPreferredWidth(100);
+        tablaEjercicios.getColumnModel().getColumn(3).setPreferredWidth(350);
+        
         add(new JScrollPane(tablaEjercicios), BorderLayout.CENTER);
         
-        JPanel panelBotones = new JPanel(new FlowLayout());
-        panelBotones.setBorder(BorderFactory.createEmptyBorder(10, 0, 0, 0));
+        JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
+        panelBotones.setBackground(COLOR_FONDO);
         
-        btnAgregar = new JButton("Agregar Ejercicio");
-        btnEditar = new JButton("Editar");
-        btnEliminar = new JButton("Eliminar");
-        btnActualizar = new JButton("Actualizar Lista");
+        btnAgregar = crearBoton("➕ Agregar", COLOR_BOTON_PRIMARY);
+        btnEditar = crearBoton("✏️ Editar", COLOR_BOTON_EDIT);
+        btnEliminar = crearBoton("🗑️ Eliminar", COLOR_BOTON_DELETE);
+        btnActualizar = crearBoton("🔄 Actualizar", COLOR_BOTON_REFRESH);
         
         panelBotones.add(btnAgregar);
         panelBotones.add(btnEditar);
@@ -71,72 +100,61 @@ public class PanelAdministrador extends JPanel {
         btnActualizar.addActionListener(e -> cargarEjercicios());
     }
     
+    private JButton crearBoton(String texto, Color color) {
+        JButton boton = new JButton(texto);
+        boton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        boton.setForeground(Color.WHITE);
+        boton.setBackground(color);
+        boton.setFocusPainted(false);
+        boton.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+        boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        return boton;
+    }
+    
     private void cargarEjercicios() {
         modeloTabla.setRowCount(0);
         for (Ejercicio e : controlador.getTodosLosEjercicios()) {
             modeloTabla.addRow(new Object[]{
-                e.getId(),
-                e.getNombre(),
-                e.getTipo(),
+                e.getId(), e.getNombre(), e.getTipo().getNombreLegible(),
                 e.getDescripcion(),
-                e.getVideoURL() != null ? e.getVideoURL() : "",
-                e.getImagenURL() != null ? e.getImagenURL() : ""
+                e.getVideoUrl() != null ? e.getVideoUrl() : "",
+                e.getImagenUrl() != null ? e.getImagenUrl() : ""
             });
         }
     }
     
     private void agregarEjercicio() {
-        JTextField txtNombre = new JTextField();
+        JTextField txtNombre = new JTextField(20);
         JTextArea txtDescripcion = new JTextArea(3, 20);
         JComboBox<String> cmbTipo = new JComboBox<>(TipoEjercicio.getNombres());
-        JTextField txtVideo = new JTextField();
-        JTextField txtImagen = new JTextField();
+        JTextField txtVideo = new JTextField(20);
+        JTextField txtImagen = new JTextField(20);
         
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nombre:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtNombre, gbc);
+        gbc.gridx = 0; gbc.gridy = 0; panel.add(new JLabel("Nombre:"), gbc);
+        gbc.gridx = 1; panel.add(txtNombre, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; panel.add(new JLabel("Descripción:"), gbc);
+        gbc.gridx = 1; panel.add(new JScrollPane(txtDescripcion), gbc);
+        gbc.gridx = 0; gbc.gridy = 2; panel.add(new JLabel("Tipo:"), gbc);
+        gbc.gridx = 1; panel.add(cmbTipo, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; panel.add(new JLabel("Video URL:"), gbc);
+        gbc.gridx = 1; panel.add(txtVideo, gbc);
+        gbc.gridx = 0; gbc.gridy = 4; panel.add(new JLabel("Imagen URL:"), gbc);
+        gbc.gridx = 1; panel.add(txtImagen, gbc);
         
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Descripcion:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JScrollPane(txtDescripcion), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Tipo:"), gbc);
-        gbc.gridx = 1;
-        panel.add(cmbTipo, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3;
-        panel.add(new JLabel("Video URL:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtVideo, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4;
-        panel.add(new JLabel("Imagen URL:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtImagen, gbc);
-        
-        int opcion = JOptionPane.showConfirmDialog(this, panel, "Agregar Nuevo Ejercicio", JOptionPane.OK_CANCEL_OPTION);
-        
+        int opcion = JOptionPane.showConfirmDialog(this, panel, "Agregar Ejercicio", 
+                JOptionPane.OK_CANCEL_OPTION);
         if (opcion == JOptionPane.OK_OPTION) {
             try {
-                TipoEjercicio tipo = TipoEjercicio.fromString((String) cmbTipo.getSelectedItem());
-                controlador.agregarEjercicio(
-                    txtNombre.getText(),
-                    txtDescripcion.getText(),
-                    tipo,
-                    txtVideo.getText(),
-                    txtImagen.getText()
-                );
+                controlador.agregarEjercicio(txtNombre.getText(), txtDescripcion.getText(),
+                    TipoEjercicio.fromString((String) cmbTipo.getSelectedItem()),
+                    txtVideo.getText(), txtImagen.getText());
                 cargarEjercicios();
-                if (panelEjercicios != null) panelEjercicios.refrescar();
-                JOptionPane.showMessageDialog(this, "Ejercicio agregado correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ejercicio agregado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -146,7 +164,7 @@ public class PanelAdministrador extends JPanel {
     private void editarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio para editar", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
@@ -154,54 +172,37 @@ public class PanelAdministrador extends JPanel {
         Ejercicio e = controlador.buscarPorId(id);
         if (e == null) return;
         
-        JTextField txtNombre = new JTextField(e.getNombre());
+        JTextField txtNombre = new JTextField(e.getNombre(), 20);
         JTextArea txtDescripcion = new JTextArea(e.getDescripcion(), 3, 20);
         JComboBox<String> cmbTipo = new JComboBox<>(TipoEjercicio.getNombres());
-        String tipoStr = e.getTipo().toString();
-        cmbTipo.setSelectedItem(tipoStr.charAt(0) + tipoStr.substring(1).toLowerCase());
-        
-        JTextField txtVideo = new JTextField(e.getVideoURL());
-        JTextField txtImagen = new JTextField(e.getImagenURL());
+        cmbTipo.setSelectedItem(e.getTipo().getNombreLegible());
+        JTextField txtVideo = new JTextField(e.getVideoUrl() != null ? e.getVideoUrl() : "", 20);
+        JTextField txtImagen = new JTextField(e.getImagenUrl() != null ? e.getImagenUrl() : "", 20);
         
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
         gbc.insets = new Insets(5, 5, 5, 5);
         gbc.fill = GridBagConstraints.HORIZONTAL;
         
-        gbc.gridx = 0; gbc.gridy = 0;
-        panel.add(new JLabel("Nombre:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtNombre, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 1;
-        panel.add(new JLabel("Descripcion:"), gbc);
-        gbc.gridx = 1;
-        panel.add(new JScrollPane(txtDescripcion), gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 2;
-        panel.add(new JLabel("Tipo:"), gbc);
-        gbc.gridx = 1;
-        panel.add(cmbTipo, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 3;
-        panel.add(new JLabel("Video URL:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtVideo, gbc);
-        
-        gbc.gridx = 0; gbc.gridy = 4;
-        panel.add(new JLabel("Imagen URL:"), gbc);
-        gbc.gridx = 1;
-        panel.add(txtImagen, gbc);
+        gbc.gridx = 0; gbc.gridy = 0; panel.add(new JLabel("Nombre:"), gbc);
+        gbc.gridx = 1; panel.add(txtNombre, gbc);
+        gbc.gridx = 0; gbc.gridy = 1; panel.add(new JLabel("Descripción:"), gbc);
+        gbc.gridx = 1; panel.add(new JScrollPane(txtDescripcion), gbc);
+        gbc.gridx = 0; gbc.gridy = 2; panel.add(new JLabel("Tipo:"), gbc);
+        gbc.gridx = 1; panel.add(cmbTipo, gbc);
+        gbc.gridx = 0; gbc.gridy = 3; panel.add(new JLabel("Video URL:"), gbc);
+        gbc.gridx = 1; panel.add(txtVideo, gbc);
+        gbc.gridx = 0; gbc.gridy = 4; panel.add(new JLabel("Imagen URL:"), gbc);
+        gbc.gridx = 1; panel.add(txtImagen, gbc);
         
         int opcion = JOptionPane.showConfirmDialog(this, panel, "Editar Ejercicio", JOptionPane.OK_CANCEL_OPTION);
-        
         if (opcion == JOptionPane.OK_OPTION) {
             try {
-                TipoEjercicio tipo = TipoEjercicio.fromString((String) cmbTipo.getSelectedItem());
-                controlador.actualizarEjercicio(id, txtNombre.getText(), txtDescripcion.getText(), tipo, txtVideo.getText(), txtImagen.getText());
+                controlador.actualizarEjercicio(id, txtNombre.getText(), txtDescripcion.getText(),
+                    TipoEjercicio.fromString((String) cmbTipo.getSelectedItem()),
+                    txtVideo.getText(), txtImagen.getText());
                 cargarEjercicios();
-                if (panelEjercicios != null) panelEjercicios.refrescar();
-                JOptionPane.showMessageDialog(this, "Ejercicio actualizado correctamente", "Exito", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Ejercicio actualizado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -211,24 +212,23 @@ public class PanelAdministrador extends JPanel {
     private void eliminarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
-            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio para eliminar", "Aviso", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Seleccione un ejercicio", "Aviso", JOptionPane.WARNING_MESSAGE);
             return;
         }
         
         int id = (int) modeloTabla.getValueAt(fila, 0);
         String nombre = (String) modeloTabla.getValueAt(fila, 1);
         
-        int confirmacion = JOptionPane.showConfirmDialog(this, "Eliminar el ejercicio '" + nombre + "'?", "Confirmar", JOptionPane.YES_NO_OPTION);
-        
-        if (confirmacion == JOptionPane.YES_OPTION) {
-            try {
-                controlador.eliminarEjercicio(id);
-                cargarEjercicios();
-                if (panelEjercicios != null) panelEjercicios.refrescar();
-                JOptionPane.showMessageDialog(this, "Ejercicio eliminado", "Exito", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        int confirm = JOptionPane.showConfirmDialog(this, "¿Eliminar '" + nombre + "'?", "Confirmar", 
+                JOptionPane.YES_NO_OPTION);
+        if (confirm == JOptionPane.YES_OPTION) {
+            controlador.eliminarEjercicio(id);
+            cargarEjercicios();
+            JOptionPane.showMessageDialog(this, "Ejercicio eliminado", "Éxito", JOptionPane.INFORMATION_MESSAGE);
         }
+    }
+    
+    public void refrescar() {
+        cargarEjercicios();
     }
 }

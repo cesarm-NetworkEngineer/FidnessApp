@@ -10,24 +10,24 @@ import javax.swing.*;
 import java.awt.*;
 
 /**
- * Ventana principal despues del login.
+ * Ventana principal después del login.
  * 
- * Use JTabbedPane porque en mis anos de experiencia, las pestanas
- * son la forma mas intuitiva de organizar funcionalidades.
+ * Use JTabbedPane porque en mis años de experiencia, las pestañas
+ * son la forma más intuitiva de organizar funcionalidades.
  * Como un cuaderno con separadores: cada cosa en su lugar.
  * 
- * Las pestanas son:
- * - Ejercicios: explorar el catalogo
+ * Las pestañas son:
+ * - Ejercicios: explorar el catálogo
  * - Mis Rutinas: gestionar mis rutinas
- * - Perfil: ver y editar mi informacion
- * - Administrar: solo para admins (gestionar catalogo)
+ * - Perfil: ver y editar mi información
+ * - Administrar: solo para admins (gestionar catálogo)
  * 
- * En DXC Technology aprendi que las interfaces con pestanas reducen
+ * En DXC Technology aprendí que las interfaces con pestañas reducen
  * la curva de aprendizaje del usuario. No hay botones escondidos,
- * todo esta a la vista. Como cuando organizas herramientas en un taller:
- * cada una en su lugar, facil de encontrar.
+ * todo está a la vista. Como cuando organizas herramientas en un taller:
+ * cada una en su lugar, fácil de encontrar.
  * 
- * @author Cesar Alonso Morera Alpizar
+ * @author César Alonso Morera Alpízar
  */
 public class VentanaPrincipal extends JFrame {
     
@@ -35,10 +35,14 @@ public class VentanaPrincipal extends JFrame {
     private ControladorEjercicios controladorEjercicios;
     private JTabbedPane panelPestanas;
     
+    // Colores del tema
+    private static final Color COLOR_FONDO = new Color(240, 240, 245);
+    private static final Color COLOR_TEXTO = new Color(25, 25, 112);
+    
     /**
      * Constructor de la ventana principal
      * 
-     * @param usuario usuario que ha iniciado sesion (puede ser admin o normal)
+     * @param usuario usuario que ha iniciado sesión (puede ser admin o normal)
      */
     public VentanaPrincipal(Usuario usuario) {
         System.out.println("VentanaPrincipal: Constructor iniciado");
@@ -52,70 +56,92 @@ public class VentanaPrincipal extends JFrame {
         initComponents();
         configurarVentana();
         
-        System.out.println("VentanaPrincipal: Inicializacion completa");
+        System.out.println("VentanaPrincipal: Inicialización completa");
     }
     
     /**
-     * Configura las propiedades basicas de la ventana
-     * Tamaño, titulo, posicion centrada, etc.
+     * Configura las propiedades básicas de la ventana
+     * Tamaño, título, posición centrada, etc.
      */
     private void configurarVentana() {
         System.out.println("VentanaPrincipal: Configurando ventana...");
-        setTitle("Fidness - " + usuarioActual.getNombre());
+        setTitle("Fidness App - " + usuarioActual.getNombre());
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
-        setLocationRelativeTo(null); // Centrar en pantalla
-        System.out.println("VentanaPrincipal: Configuracion completada (900x600)");
+        setSize(1000, 700);
+        setLocationRelativeTo(null);
+        setMinimumSize(new Dimension(800, 600));
+        
+        // Configurar icono si existe
+        try {
+            ImageIcon icon = new ImageIcon(getClass().getResource("/resources/icon.png"));
+            setIconImage(icon.getImage());
+        } catch (Exception e) {
+            System.out.println("No se encontró el icono de la aplicación");
+        }
+        
+        System.out.println("VentanaPrincipal: Configuración completada (1000x700)");
     }
     
     /**
-     * Inicializa las pestanas segun el tipo de usuario
+     * Inicializa las pestañas según el tipo de usuario
      * 
-     * Si el usuario es administrador, se agrega una cuarta pestana
-     * llamada "Administrar". Esto permite gestionar el catalogo de ejercicios.
+     * Si el usuario es administrador, se agrega una cuarta pestaña
+     * llamada "Administrar". Esto permite gestionar el catálogo de ejercicios.
      * 
-     * En los sistemas que desarrolle en Infinite Computer Solutions,
-     * aprendi que la interfaz debe adaptarse al rol del usuario.
-     * Un usuario normal no necesita ver opciones de administracion.
+     * En los sistemas que desarrollé en Infinite Computer Solutions,
+     * aprendí que la interfaz debe adaptarse al rol del usuario.
+     * Un usuario normal no necesita ver opciones de administración.
      */
     private void initComponents() {
-        System.out.println("VentanaPrincipal: Creando pestanas...");
+        System.out.println("VentanaPrincipal: Creando pestañas...");
+        
+        // Panel principal con estilo
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(COLOR_FONDO);
+        
         panelPestanas = new JTabbedPane();
+        panelPestanas.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         
         // ===== PANEL DE EJERCICIOS =====
-        // Este panel muestra el catalogo completo de ejercicios
-        // Es visible para todos los usuarios
         System.out.println("Creando panel de ejercicios...");
         PanelEjercicios panelEjercicios = new PanelEjercicios(usuarioActual, controladorEjercicios);
         
         // ===== PANEL DE MIS RUTINAS =====
-        // Este panel muestra las rutinas creadas por el usuario
-        // Es visible para todos los usuarios
         System.out.println("Creando panel de mis rutinas...");
         PanelMisRutinas panelMisRutinas = new PanelMisRutinas(usuarioActual, controladorEjercicios);
         
-        // ===== AGREGAR PESTANAS BASICAS =====
-        System.out.println("Agregando pestana: Ejercicios");
-        panelPestanas.addTab("Ejercicios", panelEjercicios);
+        // ===== AGREGAR PESTAÑAS BÁSICAS =====
+        System.out.println("Agregando pestaña: Ejercicios");
+        panelPestanas.addTab("🏋️ Ejercicios", panelEjercicios);
         
-        System.out.println("Agregando pestana: Mis Rutinas");
-        panelPestanas.addTab("Mis Rutinas", panelMisRutinas);
+        System.out.println("Agregando pestaña: Mis Rutinas");
+        panelPestanas.addTab("📋 Mis Rutinas", panelMisRutinas);
         
-        System.out.println("Agregando pestana: Perfil");
-        panelPestanas.addTab("Perfil", new PanelPerfil(usuarioActual));
+        System.out.println("Agregando pestaña: Perfil");
+        panelPestanas.addTab("👤 Perfil", new PanelPerfil(usuarioActual));
         
-        // ===== PESTANA DE ADMINISTRACION (SOLO PARA ADMINS) =====
-        // En mis cursos de Linux, siempre hay un usuario root con privilegios especiales.
-        // Exactamente lo mismo aplico aca: solo los administradores pueden gestionar el catalogo.
+        // ===== PESTAÑA DE ADMINISTRACIÓN (SOLO PARA ADMINS) =====
         if (usuarioActual.isEsAdmin()) {
-            System.out.println("Agregando pestana: Administrar (solo admin)");
+            System.out.println("Agregando pestaña: Administrar (solo admin)");
             PanelAdministrador panelAdmin = new PanelAdministrador(controladorEjercicios, panelEjercicios);
-            panelPestanas.addTab("Administrar", panelAdmin);
+            panelPestanas.addTab("⚙️ Administrar", panelAdmin);
         } else {
-            System.out.println("Usuario normal - sin pestana de administracion");
+            System.out.println("Usuario normal - sin pestaña de administración");
         }
         
-        add(panelPestanas);
-        System.out.println("VentanaPrincipal: " + panelPestanas.getTabCount() + " pestanas creadas");
+        mainPanel.add(panelPestanas, BorderLayout.CENTER);
+        
+        // Barra de estado en la parte inferior
+        JLabel lblEstado = new JLabel(" Conectado como: " + usuarioActual.getNombre() + 
+                                      " (" + (usuarioActual.isEsAdmin() ? "Administrador" : "Usuario") + ")");
+        lblEstado.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        lblEstado.setForeground(new Color(100, 100, 100));
+        lblEstado.setBorder(BorderFactory.createEmptyBorder(5, 10, 5, 10));
+        lblEstado.setBackground(new Color(230, 230, 240));
+        lblEstado.setOpaque(true);
+        mainPanel.add(lblEstado, BorderLayout.SOUTH);
+        
+        add(mainPanel);
+        System.out.println("VentanaPrincipal: " + panelPestanas.getTabCount() + " pestañas creadas");
     }
 }

@@ -5,6 +5,7 @@
 package persistencia;
 
 import java.sql.*;
+import java.io.File;
 
 /**
  * Clase encargada de la conexión con la base de datos SQLite.
@@ -24,6 +25,22 @@ public class ConexionBD {
     private static Connection connection = null;
     
     /**
+     * Ruta ABSOLUTA para la base de datos - SOLUCIÓN PERMANENTE
+     * 
+     * El problema original: usar "fidness.db" (ruta relativa) causaba que
+     * NetBeans a veces creara el archivo en diferentes carpetas (build/, dist/, o src/)
+     * y los datos parecían perderse al reiniciar.
+     * 
+     * Ahora usamos una ruta fija en el directorio del usuario.
+     * En Windows será: C:\Users\TuUsuario\FitnessAppData\fidness.db
+     * En Linux/Mac: /home/tuusuario/FitnessAppData/fidness.db
+     */
+    private static final String CARPETA_DATOS = System.getProperty("user.home") + 
+                                                File.separator + "FitnessAppData";
+    private static final String RUTA_COMPLETA_BD = CARPETA_DATOS + 
+                                                   File.separator + "fidness.db";
+    
+    /**
      * Configuración especial para JDK 25 (Java 25)
      * 
      * Cuando cambié a Java 25, empecé a tener problemas con las librerías
@@ -37,6 +54,15 @@ public class ConexionBD {
         System.setProperty("org.sqlite.lib.name", "dummy");
         System.setProperty("org.sqlite.useJNILoader", "false");
         System.setProperty("org.sqlite.purejava", "true");
+        
+        // Crear la carpeta de datos si no existe
+        File carpeta = new File(CARPETA_DATOS);
+        if (!carpeta.exists()) {
+            boolean creada = carpeta.mkdirs();
+            if (creada) {
+                System.out.println("📁 Carpeta de datos creada: " + CARPETA_DATOS);
+            }
+        }
     }
     
     /**
@@ -44,6 +70,10 @@ public class ConexionBD {
      * 
      * Uso el patrón Singleton: una sola conexión para toda la app.
      * Como tener una sola llave para entrar a tu casa, no necesitas mil.
+     * 
+     * 🔴 CAMBIO IMPORTANTE: Ahora forzamos auto-commit = true
+     * Esto garantiza que cada INSERT, UPDATE o DELETE se guarde inmediatamente
+     * en el archivo de la base de datos, sin necesidad de commit manual.
      * 
      * @return Connection objeto de conexión a SQLite
      */
@@ -53,13 +83,26 @@ public class ConexionBD {
                 // Cargar el driver de SQLite (como poner la llave en la cerradura)
                 Class.forName("org.sqlite.JDBC");
                 
-                // La URL dice: "conéctate al archivo fidness.db"
-                // Si no existe, SQLite lo crea automáticamente
-                // El parámetro enable_load_extension=false evita problemas con JDK 25
-                String url = "jdbc:sqlite:fidness.db?enable_load_extension=false";
+                // Usar la ruta ABSOLUTA - ¡Ya no más datos perdidos!
+                String url = "jdbc:sqlite:" + RUTA_COMPLETA_BD + "?enable_load_extension=false";
                 connection = DriverManager.getConnection(url);
-                System.out.println("✅ Base de datos conectada: fidness.db");
-                System.out.println("   (Modo compatible con JDK 25)");
+                
+                // 🔴 SOLUCIÓN CLAVE: Forzar auto-commit a TRUE
+                // Esto asegura que cada operación se guarde inmediatamente en el disco
+                connection.setAutoCommit(true);
+                
+                System.out.println("✅ Base de datos conectada exitosamente");
+                System.out.println("   📍 Ubicación: " + RUTA_COMPLETA_BD);
+                System.out.println("   🔓 Auto-commit: " + connection.getAutoCommit());
+                System.out.println("   ☕ Modo compatible con JDK 25");
+                
+                // Verificar si el archivo ya existía
+                File archivoBD = new File(RUTA_COMPLETA_BD);
+                if (archivoBD.exists()) {
+                    System.out.println("   📊 Tamaño de la BD: " + archivoBD.length() + " bytes");
+                } else {
+                    System.out.println("   🆕 Se creará un nuevo archivo de base de datos");
+                }
                 
                 // Crear las tablas si es la primera vez que corremos
                 crearTablas();
@@ -71,7 +114,8 @@ public class ConexionBD {
             } catch (SQLException e) {
                 System.err.println("❌ Error de conexión con la base de datos:");
                 System.err.println("   " + e.getMessage());
-                System.err.println("   Verifica que el archivo fidness.db no esté corrupto");
+                System.err.println("   Verifica que la carpeta tenga permisos de escritura:");
+                System.err.println("   " + CARPETA_DATOS);
             }
         }
         return connection;
@@ -93,6 +137,12 @@ public class ConexionBD {
      * cada cosa en su lugar y fácil de encontrar".
      */
     private static void crearTablas() {
+        // Verificar que la conexión no sea nula
+        if (connection == null) {
+            System.err.println("⚠️ No se pueden crear tablas: no hay conexión a BD");
+            return;
+        }
+        
         String sqlUsuarios = """
             CREATE TABLE IF NOT EXISTS usuarios (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -153,8 +203,52 @@ public class ConexionBD {
         } catch (SQLException e) {
             System.err.println("⚠️ Error verificando/creando tablas: " + e.getMessage());
             System.err.println("   Esto puede ocurrir si la base de datos está corrupta.");
-            System.err.println("   Solución: elimina el archivo fidness.db y vuelve a ejecutar.");
+            System.err.println("   Solución: elimina el archivo " + RUTA_COMPLETA_BD + " y vuelve a ejecutar.");
         }
+    }
+    
+    /**
+     * Método de diagnóstico para verificar el estado de la conexión
+     * 
+     * Este método ayuda a depurar problemas de persistencia.
+     * Muestra información útil sobre dónde se guardan realmente los datos.
+     * 
+     * @return true si todo está bien, false si hay problemas
+     */
+    public static boolean diagnosticarConexion() {
+        System.out.println("\n🔍 ===== DIAGNÓSTICO DE BASE DE DATOS =====");
+        System.out.println("📁 Carpeta de datos: " + CARPETA_DATOS);
+        System.out.println("🗄️  Archivo BD: " + RUTA_COMPLETA_BD);
+        
+        File archivoBD = new File(RUTA_COMPLETA_BD);
+        if (archivoBD.exists()) {
+            System.out.println("✅ El archivo de BD existe");
+            System.out.println("   Tamaño: " + archivoBD.length() + " bytes");
+            System.out.println("   Última modificación: " + new java.util.Date(archivoBD.lastModified()));
+        } else {
+            System.out.println("⚠️ El archivo de BD NO existe aún (se creará al guardar datos)");
+        }
+        
+        try {
+            Connection conn = getConnection();
+            if (conn != null) {
+                System.out.println("✅ Conexión activa");
+                System.out.println("   Auto-commit: " + conn.getAutoCommit());
+                
+                // Probar una operación simple
+                try (Statement stmt = conn.createStatement()) {
+                    stmt.execute("SELECT 1");
+                    System.out.println("✅ Consulta de prueba exitosa");
+                }
+                
+                return true;
+            }
+        } catch (SQLException e) {
+            System.err.println("❌ Error en diagnóstico: " + e.getMessage());
+        }
+        
+        System.out.println("==========================================\n");
+        return false;
     }
     
     /**

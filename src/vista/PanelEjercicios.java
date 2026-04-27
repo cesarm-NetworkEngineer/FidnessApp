@@ -66,7 +66,7 @@ public class PanelEjercicios extends JPanel {
         add(panelFiltros, BorderLayout.NORTH);
         
         // Tabla de ejercicios
-        String[] columnas = {"ID", "Nombre", "Tipo", "Descripcion"};
+        String[] columnas = {"ID", "Nombre", "Tipo", "Descripción"};
         modeloTabla = new DefaultTableModel(columnas, 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
@@ -103,7 +103,7 @@ public class PanelEjercicios extends JPanel {
         
         add(panelInferior, BorderLayout.SOUTH);
         
-        // Eventos
+        // Eventos de los botones
         btnBuscar.addActionListener(e -> buscarEjercicios());
         btnLimpiar.addActionListener(e -> limpiarFiltros());
         btnVerVideo.addActionListener(e -> verVideo());
@@ -124,7 +124,7 @@ public class PanelEjercicios extends JPanel {
             modeloTabla.addRow(new Object[]{
                 e.getId(),
                 e.getNombre(),
-                e.getTipo(),
+                e.getTipo().getNombreLegible(), // 🔴 CORREGIDO: usar nombre legible
                 e.getDescripcion()
             });
         }
@@ -134,10 +134,10 @@ public class PanelEjercicios extends JPanel {
      * Refresca la tabla de ejercicios (llamar después de agregar/editar/eliminar)
      */
     public void refrescar() {
-    ejerciciosActuales = controlador.getTodosLosEjercicios();
-    cargarEjercicios();
-    System.out.println("PanelEjercicios refrescado: " + ejerciciosActuales.size() + " ejercicios");
-}
+        ejerciciosActuales = controlador.getTodosLosEjercicios();
+        cargarEjercicios();
+        System.out.println("PanelEjercicios refrescado: " + ejerciciosActuales.size() + " ejercicios");
+    }
     
     private void buscarEjercicios() {
         String tipo = (String) cmbTipoEjercicio.getSelectedItem();
@@ -146,7 +146,9 @@ public class PanelEjercicios extends JPanel {
         if (!busqueda.isEmpty()) {
             ejerciciosActuales = controlador.buscarPorNombre(busqueda);
         } else {
-            ejerciciosActuales = controlador.buscarPorTipo(TipoEjercicio.fromString(tipo));
+            // Convertir el nombre legible a enum
+            TipoEjercicio tipoEnum = TipoEjercicio.fromString(tipo);
+            ejerciciosActuales = controlador.buscarPorTipo(tipoEnum);
         }
         
         cargarEjercicios();
@@ -190,9 +192,10 @@ public class PanelEjercicios extends JPanel {
         int id = (int) modeloTabla.getValueAt(fila, 0);
         Ejercicio e = controlador.buscarPorId(id);
         
-        if (e != null && e.getVideoURL() != null && !e.getVideoURL().isEmpty()) {
+        // 🔴 CORREGIDO: getVideoUrl() en lugar de getVideoURL()
+        if (e != null && e.getVideoUrl() != null && !e.getVideoUrl().isEmpty()) {
             try {
-                Desktop.getDesktop().browse(new java.net.URI(e.getVideoURL()));
+                Desktop.getDesktop().browse(new java.net.URI(e.getVideoUrl()));
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, 
                     "No se pudo abrir el video: " + ex.getMessage(), 

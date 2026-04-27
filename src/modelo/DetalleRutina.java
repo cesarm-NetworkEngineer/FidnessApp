@@ -7,103 +7,121 @@ package modelo;
 import java.io.Serializable;
 
 /**
- * Clase asociativa que resuelve la relación muchos-a-muchos
- * entre Rutina y Ejercicio.
+ * DetalleRutina - La relación entre una rutina y un ejercicio.
  * 
- * Una rutina es como un script de Python bien estructurado: tiene un nombre 
- * que lo identifica, pertenece a un autor, y se ejecuta paso a paso.
- * Esta clase es cada línea de ese script: el ejercicio específico,
- * en qué orden va, cuántas series y repeticiones.
+ * En bases de datos, esto es lo que llamamos una "tabla puente" o
+ * "tabla de relación". Permite que una rutina tenga muchos ejercicios
+ * y que un ejercicio aparezca en muchas rutinas.
  * 
- * En mis clases, siempre digo: "un detalle es donde viven los datos específicos"
- * Como cuando llenás una planilla de Excel: cada fila es un detalle.
+ * Además del vínculo, guarda información específica de la aparición:
+ * - En qué orden va el ejercicio dentro de la rutina
+ * - Cuántas series hay que hacer
+ * - Cuántas repeticiones por serie
+ * - Notas adicionales (ej: "usar mancuernas de 10kg")
+ * 
+ * En mi carrera como ingeniero de redes, esto es como una VLAN trunk:
+ * conecta dos mundos y lleva información adicional (tag) para distinguir.
  * 
  * @author César Alonso Morera Alpízar
  */
 public class DetalleRutina implements Serializable {
     private static final long serialVersionUID = 1L;
     
-    private int orden;           // Posición en la rutina (1, 2, 3...)
-    private Ejercicio ejercicio;  // Referencia al ejercicio (no guardamos ID, guardamos el objeto)
-    private int series;           // Número de series (>= 1)
-    private int repeticiones;     // Número de repeticiones (>= 1)
-    private String notas;         // Notas adicionales (opcional, ej: "hacer lento" o "peso moderado")
+    private int id;
+    private int idRutina;
+    private int idEjercicio;
+    private int orden;
+    private int series;
+    private int repeticiones;
+    private String notas;
+    private Ejercicio ejercicio;  // Referencia al objeto (no se guarda en BD)
     
     /**
-     * Constructor vacío para serialización
+     * Constructor completo (para cargar desde base de datos)
      */
-    public DetalleRutina() {
+    public DetalleRutina(int id, int idRutina, int idEjercicio, int orden, int series, int repeticiones, String notas) {
+        this.id = id;
+        this.idRutina = idRutina;
+        this.idEjercicio = idEjercicio;
+        this.orden = orden;
+        this.series = series;
+        this.repeticiones = repeticiones;
+        this.notas = notas != null ? notas : "";
+        this.ejercicio = null;
     }
     
     /**
-     * Constructor con campos obligatorios
-     * 
-     * @param orden posición en la rutina
-     * @param ejercicio el ejercicio a realizar
-     * @param series número de series (debe ser >= 1)
-     * @param repeticiones número de repeticiones (debe ser >= 1)
+     * Constructor para crear nuevos detalles (sin ID, sin nota)
      */
     public DetalleRutina(int orden, Ejercicio ejercicio, int series, int repeticiones) {
-        this.orden = orden;
+        this(0, 0, ejercicio.getId(), orden, series, repeticiones, "");
         this.ejercicio = ejercicio;
-        setSeries(series);           // Usamos setter para validar
-        setRepeticiones(repeticiones); // Usamos setter para validar
     }
     
-    // Getters y Setters con validación
+    /**
+     * Constructor para crear nuevos detalles (con nota)
+     */
+    public DetalleRutina(int orden, Ejercicio ejercicio, int series, int repeticiones, String notas) {
+        this(0, 0, ejercicio.getId(), orden, series, repeticiones, notas);
+        this.ejercicio = ejercicio;
+    }
+    
+    // ============================================================
+    // GETTERS Y SETTERS
+    // ============================================================
+    
+    public int getId() { 
+        return id; 
+    }
+    
+    public void setId(int id) { 
+        this.id = id; 
+    }
+    
+    public int getIdRutina() { 
+        return idRutina; 
+    }
+    
+    public void setIdRutina(int idRutina) { 
+        this.idRutina = idRutina; 
+    }
+    
+    public int getIdEjercicio() { 
+        return idEjercicio; 
+    }
+    
+    public void setIdEjercicio(int idEjercicio) { 
+        this.idEjercicio = idEjercicio; 
+    }
     
     public int getOrden() { 
         return orden; 
     }
     
-    /**
-     * Valida que el orden sea positivo
-     */
     public void setOrden(int orden) { 
-        if (orden < 1) {
-            throw new IllegalArgumentException("El orden debe ser 1 o superior");
-        }
         this.orden = orden; 
-    }
-    
-    public Ejercicio getEjercicio() { 
-        return ejercicio; 
-    }
-    
-    public void setEjercicio(Ejercicio ejercicio) { 
-        if (ejercicio == null) {
-            throw new IllegalArgumentException("El ejercicio no puede ser null");
-        }
-        this.ejercicio = ejercicio; 
     }
     
     public int getSeries() { 
         return series; 
     }
     
-    /**
-     * Valida que las series sean >= 1
-     * Un ejercicio con 0 series no tiene sentido
-     */
     public void setSeries(int series) {
         if (series < 1) {
             throw new IllegalArgumentException("Las series deben ser al menos 1");
         }
-        this.series = series;
+        this.series = series; 
     }
     
     public int getRepeticiones() { 
         return repeticiones; 
     }
     
-    /**
-     * Valida que las repeticiones sean >= 1
-     */
     public void setRepeticiones(int repeticiones) {
         if (repeticiones < 1) {
             throw new IllegalArgumentException("Las repeticiones deben ser al menos 1");
         }
-        this.repeticiones = repeticiones;
+        this.repeticiones = repeticiones; 
     }
     
     public String getNotas() { 
@@ -111,15 +129,30 @@ public class DetalleRutina implements Serializable {
     }
     
     public void setNotas(String notas) { 
-        this.notas = notas; 
+        this.notas = notas != null ? notas : ""; 
+    }
+    
+    public Ejercicio getEjercicio() { 
+        return ejercicio; 
+    }
+    
+    public void setEjercicio(Ejercicio ejercicio) { 
+        this.ejercicio = ejercicio;
+        if (ejercicio != null) {
+            this.idEjercicio = ejercicio.getId();
+        }
+    }
+    
+    /**
+     * Texto resumen para mostrar en las listas de la UI
+     */
+    public String getResumen() {
+        String nombreEjercicio = ejercicio != null ? ejercicio.getNombre() : "Ejercicio #" + idEjercicio;
+        return nombreEjercicio + " - " + series + "x" + repeticiones;
     }
     
     @Override
     public String toString() {
-        String base = orden + ". " + ejercicio.getNombre() + " - " + series + "x" + repeticiones;
-        if (notas != null && !notas.isEmpty()) {
-            base += " (" + notas + ")";
-        }
-        return base;
+        return getResumen();
     }
 }

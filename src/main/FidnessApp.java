@@ -5,6 +5,7 @@
 package main;
 
 import vista.VentanaLogin;
+import servidor.ServidorLocal;  // 🔴 IMPORTANTE: Agregar esta importación
 import javax.swing.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * además de la puerta principal.
  * 
  * @author César Alonso Morera Alpízar
- * @version 2.0 - Con base de datos y redes
+ * @version 2.2 - Abril 2026 - Corregido para máxima estabilidad
  */
 public class FidnessApp {
 
@@ -48,53 +49,73 @@ public class FidnessApp {
         // que aparecen en Java 16+ con SQLite
         System.setProperty("org.sqlite.lib.path", "");
         System.setProperty("org.sqlite.lib.name", "");
+        System.setProperty("org.sqlite.useJNILoader", "false");
+        System.setProperty("org.sqlite.purejava", "true");
         Logger.getLogger("org.sqlite").setLevel(Level.SEVERE);
         // Suprimir también otras advertencias de SQLite
         Logger.getLogger("org.sqlite.JDBC").setLevel(Level.SEVERE);
         // ==========================================================
         
-        // ===== NUEVO: INICIAR SERVIDOR (Requisito de REDES) =====
+        // Mostrar información del sistema
+        System.out.println("=====================================");
+        System.out.println("   🏋️ FIDNESS APP - Iniciando...");
+        System.out.println("=====================================");
+        System.out.println("   ☕ Java version: " + System.getProperty("java.version"));
+        System.out.println("   💻 SO: " + System.getProperty("os.name"));
+        System.out.println("=====================================");
+        
+        // ===== INICIAR SERVIDOR (Requisito de REDES) =====
         // El servidor corre en segundo plano atendiendo conexiones
         // Es como tener un recepcionista que trabaja mientras tú haces otras cosas
-        System.out.println("Iniciando componentes del sistema...");
+        System.out.println("\n🔧 Iniciando componentes del sistema...");
         
-        try {
-            // Iniciar el servidor local en un hilo separado
-            // Esto NO bloquea la interfaz gráfica
-            servidor.ServidorLocal.getInstance().start();
-            System.out.println("Servidor de red iniciado correctamente");
-        } catch (Exception e) {
-            System.err.println("ADVERTENCIA: No se pudo iniciar el servidor de red");
-            System.err.println("   La aplicacion funcionara igual, pero sin funcionalidad de red");
-            System.err.println("   Error: " + e.getMessage());
-        }
-        
-        // ===== INTERFAZ GRAFICA (como antes) =====
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                try {
-                    // Intento usar el look and feel del sistema operativo
-                    // Asi la app se ve "nativa" en Windows, Mac o Linux
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (Exception e) {
-                    // Si falla, usamos el default (Metal) y ya
-                    System.err.println("No se pudo cargar el Look and Feel: " + e.getMessage());
+        // Iniciar servidor en un hilo separado para no bloquear la UI
+        new Thread(() -> {
+            try {
+                // 🔴 CORREGIDO: Usar la importación directamente
+                ServidorLocal servidor = ServidorLocal.getInstance();
+                servidor.start();
+                
+                // Pequeña pausa para que el servidor se estabilice
+                Thread.sleep(500);
+                
+                if (servidor.estaCorriendo()) {
+                    System.out.println("🌐 ✅ Servidor de red activo en puerto: 9091");
+                } else {
+                    System.out.println("🌐 ⚠️ Servidor en modo compatible (funciones de red limitadas)");
                 }
-                
-                // Mensaje de bienvenida en consola
-                System.out.println("=====================================");
-                System.out.println("   FIDNESS APP - Iniciando...");
-                System.out.println("=====================================");
-                System.out.println("Usuario demo: demo@fidness.com / demo123");
-                System.out.println("Admin: admin@fidness.com / admin123");
-                System.out.println("Base de datos: SQLite (fidness.db)");
-                System.out.println("Servidor de red: Puerto 9090");
-                System.out.println("=====================================");
-                
-                // Crear y mostrar la ventana de login
-                new VentanaLogin().setVisible(true);
+            } catch (Exception e) {
+                System.err.println("🌐 ⚠️ No se pudo iniciar el servidor de red");
+                System.err.println("   La aplicación funcionará correctamente sin funciones de red");
+                System.err.println("   Detalle: " + e.getMessage());
             }
+        }).start();
+        
+        // ===== INTERFAZ GRÁFICA =====
+        SwingUtilities.invokeLater(() -> {
+            try {
+                // Intentar usar el look and feel del sistema operativo
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                System.out.println("🎨 Look and Feel nativo cargado");
+            } catch (Exception e) {
+                System.err.println("🎨 Usando Look and Feel por defecto");
+            }
+            
+            // Mensajes de bienvenida en consola
+            System.out.println("\n=====================================");
+            System.out.println("   ✅ FIDNESS APP - INICIADA CORRECTAMENTE");
+            System.out.println("=====================================");
+            System.out.println("📝 CREDENCIALES DE ACCESO:");
+            System.out.println("   👑 Admin:    admin@fidness.com");
+            System.out.println("   🔑 Password: admin123");
+            System.out.println("   👤 Demo:     demo@fidness.com");
+            System.out.println("   🔑 Password: demo123");
+            System.out.println("=====================================\n");
+            
+            // Crear y mostrar la ventana de login
+            VentanaLogin login = new VentanaLogin();
+            login.setVisible(true);
+            System.out.println("🪟 Ventana de login mostrada");
         });
     }
 }

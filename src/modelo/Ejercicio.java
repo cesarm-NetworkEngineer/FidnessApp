@@ -7,15 +7,14 @@ package modelo;
 import java.io.Serializable;
 
 /**
- * Clase que representa un ejercicio del catálogo.
+ * Clase que representa un ejercicio del catálogo de FidnessApp.
  * 
- * Cuando creaba contenido para AVA® sobre Rocky Linux 9, entendí que los 
- * ejemplos concretos son los que pegan. Por eso puse 'Press de Banca' en lugar 
- * de 'Ejercicio1'. La gente necesita visualizar.
+ * Cada ejercicio tiene un tipo (PIERNA, BRAZO, etc.), una descripción
+ * y opcionalmente URLs de video o imagen para demostración.
  * 
- * Y el videoURL no es adorno: en mis clases virtuales, el video es el 50% del 
- * aprendizaje. Un texto bien escrito está bien, pero un video mostrando
- * la técnica correcta vale oro.
+ * En mi experiencia dando soporte en Infinite Computer Solutions,
+ * aprendí que los datos deben tener una estructura clara y consistente.
+ * Un ejercicio mal definido es como una IP mal configurada: todo falla.
  * 
  * @author César Alonso Morera Alpízar
  */
@@ -26,39 +25,38 @@ public class Ejercicio implements Serializable {
     private String nombre;
     private String descripcion;
     private TipoEjercicio tipo;
-    private String videoURL;    // Enlace a YouTube o similar
-    private String imagenURL;   // Imagen ilustrativa
+    private String videoUrl;
+    private String imagenUrl;
     
     /**
-     * Constructor vacío necesario para serialización
+     * Constructor completo (para cargar desde base de datos)
      */
-    public Ejercicio() {
-    }
-    
-    /**
-     * Constructor con campos obligatorios
-     */
-    public Ejercicio(int id, String nombre, String descripcion, TipoEjercicio tipo) {
+    public Ejercicio(int id, String nombre, String descripcion, TipoEjercicio tipo, String videoUrl, String imagenUrl) {
         this.id = id;
         this.nombre = nombre;
         this.descripcion = descripcion;
         this.tipo = tipo;
+        this.videoUrl = videoUrl;
+        this.imagenUrl = imagenUrl;
     }
     
     /**
-     * Constructor completo
+     * Constructor para crear nuevos ejercicios (sin ID aún)
      */
-    public Ejercicio(int id, String nombre, String descripcion, TipoEjercicio tipo, 
-                    String videoURL, String imagenURL) {
-        this.id = id;
-        this.nombre = nombre;
-        this.descripcion = descripcion;
-        this.tipo = tipo;
-        this.videoURL = videoURL;
-        this.imagenURL = imagenURL;
+    public Ejercicio(String nombre, String descripcion, TipoEjercicio tipo) {
+        this(0, nombre, descripcion, tipo, null, null);
     }
     
-    // Getters y Setters
+    /**
+     * Constructor simplificado para pruebas rápidas
+     */
+    public Ejercicio(String nombre, TipoEjercicio tipo) {
+        this(0, nombre, "Ejercicio de " + tipo.name().toLowerCase(), tipo, null, null);
+    }
+    
+    // ============================================================
+    // GETTERS Y SETTERS
+    // ============================================================
     
     public int getId() { 
         return id; 
@@ -72,10 +70,6 @@ public class Ejercicio implements Serializable {
         return nombre; 
     }
     
-    /**
-     * Valida que el nombre no esté vacío
-     * Un ejercicio sin nombre es como un estudiante sin matrícula
-     */
     public void setNombre(String nombre) {
         if (nombre == null || nombre.trim().isEmpty()) {
             throw new IllegalArgumentException("El nombre del ejercicio es obligatorio");
@@ -87,15 +81,8 @@ public class Ejercicio implements Serializable {
         return descripcion; 
     }
     
-    /**
-     * Valida que la descripción no esté vacía
-     * La descripción es donde el usuario aprende la técnica
-     */
-    public void setDescripcion(String descripcion) {
-        if (descripcion == null || descripcion.trim().isEmpty()) {
-            throw new IllegalArgumentException("La descripción es obligatoria");
-        }
-        this.descripcion = descripcion;
+    public void setDescripcion(String descripcion) { 
+        this.descripcion = descripcion; 
     }
     
     public TipoEjercicio getTipo() { 
@@ -103,60 +90,37 @@ public class Ejercicio implements Serializable {
     }
     
     public void setTipo(TipoEjercicio tipo) { 
-        if (tipo == null) {
-            throw new IllegalArgumentException("El tipo de ejercicio es obligatorio");
-        }
         this.tipo = tipo; 
     }
     
-    public String getVideoURL() { 
-        return videoURL; 
+    public String getVideoUrl() { 
+        return videoUrl; 
+    }
+    
+    public void setVideoUrl(String videoUrl) { 
+        this.videoUrl = videoUrl; 
+    }
+    
+    public String getImagenUrl() { 
+        return imagenUrl; 
+    }
+    
+    public void setImagenUrl(String imagenUrl) { 
+        this.imagenUrl = imagenUrl; 
     }
     
     /**
-     * Setter con validación básica de URL
-     * 
-     * @param videoURL La URL a guardar
-     * @throws IllegalArgumentException si la URL no es válida
+     * Obtiene el nombre del tipo en formato legible
+     * Ejemplo: PIERNA -> "Pierna"
      */
-    public void setVideoURL(String videoURL) {
-        if (videoURL != null && !videoURL.isEmpty()) {
-            // Validación simple: debe empezar con http:// o https://
-            if (videoURL.startsWith("http://") || videoURL.startsWith("https://")) {
-                this.videoURL = videoURL;
-            } else {
-                throw new IllegalArgumentException("La URL del video debe comenzar con http:// o https://");
-            }
-        } else {
-            this.videoURL = null;
-        }
-    }
-    
-    public String getImagenURL() { 
-        return imagenURL; 
-    }
-    
-    /**
-     * Setter con validación básica de URL
-     * 
-     * @param imagenURL La URL a guardar
-     * @throws IllegalArgumentException si la URL no es válida
-     */
-    public void setImagenURL(String imagenURL) {
-        if (imagenURL != null && !imagenURL.isEmpty()) {
-            if (imagenURL.startsWith("http://") || imagenURL.startsWith("https://")) {
-                this.imagenURL = imagenURL;
-            } else {
-                throw new IllegalArgumentException("La URL de la imagen debe comenzar con http:// o https://");
-            }
-        } else {
-            this.imagenURL = null;
-        }
+    public String getTipoNombre() {
+        String nombre = tipo.name();
+        return nombre.charAt(0) + nombre.substring(1).toLowerCase();
     }
     
     @Override
     public String toString() {
-        return nombre;
+        return nombre + " (" + getTipoNombre() + ")";
     }
     
     /**

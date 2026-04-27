@@ -57,11 +57,50 @@ public enum TipoEjercicio {
      * @return el TipoEjercicio correspondiente, o PIERNA por defecto
      */
     public static TipoEjercicio fromString(String texto) {
+        if (texto == null) {
+            return PIERNA;
+        }
+        
         for (TipoEjercicio tipo : TipoEjercicio.values()) {
             if (tipo.name().equalsIgnoreCase(texto)) {
                 return tipo;
             }
         }
         return PIERNA; // Por defecto, por si acaso
+    }
+    
+    /**
+     * Obtiene el nombre del tipo con formato legible (primera letra mayúscula)
+     * Ejemplo: PIERNA -> "Pierna"
+     * 
+     * @return nombre formateado
+     */
+    public String getNombreLegible() {
+        String nombre = this.name();
+        return nombre.charAt(0) + nombre.substring(1).toLowerCase();
+    }
+    
+    /**
+     * Obtiene un emoji representativo del tipo de ejercicio
+     * Pequeño detalle visual para la interfaz
+     * 
+     * @return emoji correspondiente
+     */
+    public String getEmoji() {
+        switch (this) {
+            case PIERNA: return "🦵";
+            case ESPALDA: return "💪";
+            case BRAZO: return "💪";
+            case PECHO: return "🏋️";
+            case ABDOMEN: return "🔥";
+            case GLUTEO: return "🍑";
+            case FULLBODY: return "🏃";
+            default: return "📋";
+        }
+    }
+    
+    @Override
+    public String toString() {
+        return getNombreLegible();
     }
 }

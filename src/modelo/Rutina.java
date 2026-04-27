@@ -25,14 +25,38 @@ public class Rutina implements Serializable {
     private LocalDateTime fechaCreacion;
     private List<DetalleRutina> detalles;
     
-    public Rutina() {
+    // 🔴 CONSTRUCTOR CORREGIDO - ahora sí asigna los valores
+    public Rutina(int id, String nombre, int idUsuario, String fechaCreacionStr) {
+        this.id = id;
+        this.nombre = nombre;
+        this.idUsuario = idUsuario;
+        this.fechaCreacion = LocalDateTime.now();
+        this.detalles = new ArrayList<>();
+        
+        // Si se proporciona una fecha, la usamos
+        if (fechaCreacionStr != null && !fechaCreacionStr.isEmpty()) {
+            try {
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+                this.fechaCreacion = LocalDateTime.parse(fechaCreacionStr, formatter);
+            } catch (Exception e) {
+                this.fechaCreacion = LocalDateTime.now();
+            }
+        }
+    }
+    
+    // Constructor principal para crear NUEVAS rutinas
+    public Rutina(String nombre, int idUsuario) {
+        this.id = 0; // 0 significa que aún no tiene ID asignado por la BD
+        this.nombre = nombre;
+        this.idUsuario = idUsuario;
         this.fechaCreacion = LocalDateTime.now();
         this.detalles = new ArrayList<>();
     }
     
+    // Constructor simplificado para cargar desde BD
     public Rutina(int id, String nombre, int idUsuario) {
         this.id = id;
-        setNombre(nombre);
+        this.nombre = nombre;
         this.idUsuario = idUsuario;
         this.fechaCreacion = LocalDateTime.now();
         this.detalles = new ArrayList<>();
@@ -75,12 +99,9 @@ public class Rutina implements Serializable {
      * Validacion: evita duplicados y maneja el orden correctamente
      */
     public boolean agregarEjercicio(Ejercicio ejercicio, int series, int repeticiones) {
-        // Validar que el ejercicio no sea null
         if (ejercicio == null) {
             throw new IllegalArgumentException("El ejercicio no puede ser null");
         }
-        
-        // Validar series y repeticiones
         if (series < 1) {
             throw new IllegalArgumentException("Las series deben ser al menos 1");
         }
@@ -88,32 +109,25 @@ public class Rutina implements Serializable {
             throw new IllegalArgumentException("Las repeticiones deben ser al menos 1");
         }
         
-        // Validar que no exista duplicado
         for (DetalleRutina detalle : detalles) {
-            if (detalle.getEjercicio().equals(ejercicio)) {
+            if (detalle.getEjercicio().getId() == ejercicio.getId()) {
                 return false;
             }
         }
         
-        // Usar tamaño actual + 1 para el orden (como sugiere Jaziel)
         int nuevoOrden = detalles.size() + 1;
-        DetalleRutina detalle = new DetalleRutina(nuevoOrden, ejercicio, series, repeticiones);
+        DetalleRutina detalle = new DetalleRutina(0, this.id, ejercicio.getId(), nuevoOrden, series, repeticiones, "");
         return detalles.add(detalle);
     }
     
-    /**
-     * Quita un ejercicio de la rutina y reordena los demas
-     * Mantiene el orden consecutivo (1, 2, 3...)
-     */
     public boolean quitarEjercicio(Ejercicio ejercicio) {
         if (ejercicio == null) {
             return false;
         }
         
-        boolean removido = detalles.removeIf(d -> d.getEjercicio().equals(ejercicio));
+        boolean removido = detalles.removeIf(d -> d.getIdEjercicio() == ejercicio.getId());
         
         if (removido) {
-            // Reordenar los que quedan (mantener secuencia 1, 2, 3...)
             for (int i = 0; i < detalles.size(); i++) {
                 detalles.get(i).setOrden(i + 1);
             }
@@ -124,7 +138,7 @@ public class Rutina implements Serializable {
     
     public boolean actualizarDetalle(Ejercicio ejercicio, int series, int repeticiones) {
         for (DetalleRutina detalle : detalles) {
-            if (detalle.getEjercicio().equals(ejercicio)) {
+            if (detalle.getIdEjercicio() == ejercicio.getId()) {
                 detalle.setSeries(series);
                 detalle.setRepeticiones(repeticiones);
                 return true;
@@ -133,14 +147,9 @@ public class Rutina implements Serializable {
         return false;
     }
     
-    /**
-     * Reordena los ejercicios intercambiando posiciones
-     * Validacion de indices con tamaño de la lista
-     */
     public boolean intercambiarOrden(int orden1, int orden2) {
         int size = detalles.size();
         
-        // Validar que los indices esten dentro del rango
         if (orden1 < 1 || orden1 > size || orden2 < 1 || orden2 > size) {
             System.err.println("Error: Indices fuera de rango. Tamaño de la lista: " + size);
             return false;
@@ -152,9 +161,7 @@ public class Rutina implements Serializable {
         detalle1.setOrden(orden2);
         detalle2.setOrden(orden1);
         
-        // Reordenar la lista segun el nuevo orden
         detalles.sort((d1, d2) -> Integer.compare(d1.getOrden(), d2.getOrden()));
-        
         return true;
     }
     

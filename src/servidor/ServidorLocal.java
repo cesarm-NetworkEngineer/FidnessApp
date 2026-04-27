@@ -28,7 +28,8 @@ public class ServidorLocal extends Thread {
     private static ServidorLocal instancia;  // Patrón Singleton
     private ServerSocket serverSocket;
     private boolean ejecutando = true;
-    private static final int PUERTO = 9090;
+    private static final int PUERTO = 9091;
+    private boolean servidorActivo = false;
     
     /**
      * Obtiene la única instancia del servidor (Patrón Singleton)
@@ -49,22 +50,25 @@ public class ServidorLocal extends Thread {
     /**
      * Constructor privado (patrón Singleton)
      * 
-     * Inicializa el servidor en el puerto 9090.
-     * Elegí el 9090 porque es un puerto poco común, así no conflictúa
+     * Inicializa el servidor en el puerto 9091.
+     * Elegí el 9091 porque es un puerto poco común, así no conflictúa
      * con otros servicios como el 8080 (web) o el 3306 (MySQL).
      */
     private ServidorLocal() {
         try {
             serverSocket = new ServerSocket(PUERTO);
+            servidorActivo = true;
             System.out.println("🌐 ======================================");
             System.out.println("🌐 SERVIDOR FIDNESS INICIADO");
             System.out.println("🌐 Puerto: " + PUERTO);
             System.out.println("🌐 Estado: Escuchando conexiones...");
             System.out.println("🌐 ======================================");
         } catch (IOException e) {
-            System.err.println("❌ ERROR: No se pudo iniciar el servidor en el puerto " + PUERTO);
-            System.err.println("   ¿Quizás ya hay otro servidor corriendo?");
-            System.err.println("   Detalle: " + e.getMessage());
+            System.err.println("⚠️ No se pudo iniciar el servidor en el puerto " + PUERTO);
+            System.err.println("   Motivo: " + e.getMessage());
+            System.err.println("   El servidor se ejecutará en modo desconectado");
+            System.err.println("   Las funciones de red no estarán disponibles");
+            servidorActivo = false;
         }
     }
     
@@ -79,6 +83,12 @@ public class ServidorLocal extends Thread {
      */
     @Override
     public void run() {
+        // Si no se pudo iniciar el servidor, no hacer nada
+        if (!servidorActivo || serverSocket == null) {
+            System.out.println("🔌 Servidor en modo inactivo");
+            return;
+        }
+        
         while (ejecutando) {
             try {
                 // Esperar a que un cliente se conecte (bloqueante)
@@ -128,6 +138,6 @@ public class ServidorLocal extends Thread {
      * @return true si el servidor está activo
      */
     public boolean estaCorriendo() {
-        return serverSocket != null && !serverSocket.isClosed() && ejecutando;
+        return servidorActivo && serverSocket != null && !serverSocket.isClosed() && ejecutando;
     }
 }

@@ -41,6 +41,7 @@ public class ManejadorCliente extends Thread {
         this.socket = socket;
         this.controladorUsuarios = new ControladorUsuarios();
         this.controladorEjercicios = new ControladorEjercicios();
+        System.out.println("🆕 Nuevo manejador creado para cliente: " + socket.getInetAddress());
     }
     
     /**
@@ -60,45 +61,76 @@ public class ManejadorCliente extends Thread {
         try (ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
              ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream())) {
             
+            out.flush(); // Asegurar que el stream esté listo
+            
             while (conectado) {
-                // Esperar comando del cliente
-                String comando = (String) in.readObject();
-                System.out.println("📨 Comando recibido: " + comando);
-                
-                // Procesar según el comando
-                switch (comando) {
+                try {
+                    // Esperar comando del cliente
+                    String comando = (String) in.readObject();
+                    System.out.println("📨 Comando recibido: " + comando);
                     
-                    case "LOGIN":
-                        procesarLogin(in, out);
-                        break;
-                        
-                    case "LISTAR_EJERCICIOS":
-                        procesarListarEjercicios(out);
-                        break;
-                        
-                    case "BUSCAR_EJERCICIO_POR_ID":
-                        procesarBuscarEjercicioPorId(in, out);
-                        break;
-                        
-                    case "REGISTRAR_USUARIO":
-                        procesarRegistro(in, out);
-                        break;
-                        
-                    case "CERRAR":
-                        System.out.println("👋 Cliente solicitó desconexión");
-                        conectado = false;
-                        break;
-                        
-                    default:
-                        System.out.println("⚠️ Comando desconocido: " + comando);
-                        out.writeObject(null);
-                        out.flush();
+                    // Procesar según el comando
+                    switch (comando) {
+                        case "LOGIN":
+                            procesarLogin(in, out);
+                            break;
+                            
+                        case "LISTAR_EJERCICIOS":
+                            procesarListarEjercicios(out);
+                            break;
+                            
+                        case "BUSCAR_EJERCICIO_POR_ID":
+                            procesarBuscarEjercicioPorId(in, out);
+                            break;
+                            
+                        case "BUSCAR_EJERCICIO_POR_NOMBRE":
+                            procesarBuscarEjercicioPorNombre(in, out);
+                            break;
+                            
+                        case "BUSCAR_EJERCICIO_POR_TIPO":
+                            procesarBuscarEjercicioPorTipo(in, out);
+                            break;
+                            
+                        case "AGREGAR_EJERCICIO":
+                            procesarAgregarEjercicio(in, out);
+                            break;
+                            
+                        case "REGISTRAR_USUARIO":
+                            procesarRegistro(in, out);
+                            break;
+                            
+                        case "LISTAR_USUARIOS":
+                            procesarListarUsuarios(out);
+                            break;
+                            
+                        case "PING":
+                            out.writeObject("PONG");
+                            out.flush();
+                            break;
+                            
+                        case "CERRAR":
+                            System.out.println("👋 Cliente solicitó desconexión");
+                            conectado = false;
+                            break;
+                            
+                        default:
+                            System.out.println("⚠️ Comando desconocido: " + comando);
+                            out.writeObject("ERROR: Comando desconocido");
+                            out.flush();
+                    }
+                } catch (SocketException e) {
+                    System.out.println("🔌 Conexión interrumpida con el cliente");
+                    conectado = false;
+                } catch (ClassNotFoundException e) {
+                    System.err.println("❌ Error de deserialización: " + e.getMessage());
+                    out.writeObject("ERROR: Formato de datos incorrecto");
+                    out.flush();
                 }
             }
             
         } catch (EOFException e) {
             System.out.println("🔌 Cliente desconectado abruptamente");
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (IOException e) {
             System.err.println("❌ Error en comunicación con cliente: " + e.getMessage());
         } finally {
             cerrarConexion();
@@ -115,6 +147,13 @@ public class ManejadorCliente extends Thread {
         String password = (String) in.readObject();
         
         System.out.println("🔐 Intento de login - Email: " + email);
+        
+        if (email == null || email.trim().isEmpty() || password == null || password.isEmpty()) {
+            System.out.println("❌ Credenciales inválidas (vacías)");
+            out.writeObject(null);
+            out.flush();
+            return;
+        }
         
         Usuario usuario = controladorUsuarios.iniciarSesion(email, password);
         
@@ -160,6 +199,60 @@ public class ManejadorCliente extends Thread {
     }
     
     /**
+     * Procesa la petición de buscar ejercicio por nombre (nuevo)
+     */
+    private void procesarBuscarEjercicioPorNombre(ObjectInputStream in, ObjectOutputStream out) 
+            throws IOException, ClassNotFoundException {
+        
+        String nombre = (String) in.readObject();
+        List<Ejercicio> ejercicios = controladorEjercicios.buscarPorNombre(nombre);
+        System.out.println("🔍 Buscando ejercicios con nombre: '" + nombre + "' - Encontrados: " + ejercicios.size());
+        out.writeObject(ejercicios);
+        out.flush();
+    }
+    
+    /**
+     * Procesa la petición de buscar ejercicio por tipo (nuevo)
+     */
+    private void procesarBuscarEjercicioPorTipo(ObjectInputStream in, ObjectOutputStream out) 
+            throws IOException, ClassNotFoundException {
+        
+        String tipoStr = (String) in.readObject();
+        modelo.TipoEjercicio tipo = modelo.TipoEjercicio.fromString(tipoStr);
+        List<Ejercicio> ejercicios = controladorEjercicios.buscarPorTipo(tipo);
+        System.out.println("🔍 Buscando ejercicios de tipo: " + tipoStr + " - Encontrados: " + ejercicios.size());
+        out.writeObject(ejercicios);
+        out.flush();
+    }
+    
+    /**
+     * Procesa la petición de agregar ejercicio (nuevo)
+     */
+    private void procesarAgregarEjercicio(ObjectInputStream in, ObjectOutputStream out) 
+            throws IOException, ClassNotFoundException {
+        
+        String nombre = (String) in.readObject();
+        String descripcion = (String) in.readObject();
+        String tipoStr = (String) in.readObject();
+        String videoUrl = (String) in.readObject();
+        String imagenUrl = (String) in.readObject();
+        
+        modelo.TipoEjercicio tipo = modelo.TipoEjercicio.fromString(tipoStr);
+        
+        System.out.println("➕ Agregando nuevo ejercicio: " + nombre);
+        
+        try {
+            Ejercicio nuevo = controladorEjercicios.agregarEjercicio(nombre, descripcion, tipo, videoUrl, imagenUrl);
+            out.writeObject(nuevo);
+            System.out.println("✅ Ejercicio agregado: " + nombre);
+        } catch (IllegalArgumentException e) {
+            System.err.println("❌ Error al agregar ejercicio: " + e.getMessage());
+            out.writeObject(null);
+        }
+        out.flush();
+    }
+    
+    /**
      * Procesa la petición de registrar usuario
      */
     private void procesarRegistro(ObjectInputStream in, ObjectOutputStream out) 
@@ -174,13 +267,31 @@ public class ManejadorCliente extends Thread {
         
         try {
             Usuario nuevo = controladorUsuarios.registrarUsuario(nombre, email, password, esAdmin);
-            nuevo.setPasswordHash(null); // No enviamos contraseña por seguridad
+            if (nuevo != null) {
+                nuevo.setPasswordHash(null); // No enviamos contraseña por seguridad
+                System.out.println("✅ Usuario registrado exitosamente: " + email);
+            } else {
+                System.out.println("❌ Error en registro de: " + email);
+            }
             out.writeObject(nuevo);
-            System.out.println("✅ Usuario registrado exitosamente: " + email);
         } catch (IllegalArgumentException e) {
             System.out.println("❌ Error en registro: " + e.getMessage());
             out.writeObject(null);
         }
+        out.flush();
+    }
+    
+    /**
+     * Procesa la petición de listar usuarios (solo para admin)
+     */
+    private void procesarListarUsuarios(ObjectOutputStream out) throws IOException {
+        List<Usuario> usuarios = controladorUsuarios.getTodosLosUsuarios();
+        // Limpiar contraseñas por seguridad
+        for (Usuario u : usuarios) {
+            u.setPasswordHash(null);
+        }
+        System.out.println("📋 Enviando " + usuarios.size() + " usuarios al cliente");
+        out.writeObject(usuarios);
         out.flush();
     }
     
