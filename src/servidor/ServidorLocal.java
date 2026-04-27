@@ -28,7 +28,8 @@ public class ServidorLocal extends Thread {
     private static ServidorLocal instancia;  // Patrón Singleton
     private ServerSocket serverSocket;
     private boolean ejecutando = true;
-    private static final int PUERTO = 9091;
+    private static final int PUERTO_BASE = 9090;  // Puerto base 9090 como explica el guión
+    private int puertoActual;
     private boolean servidorActivo = false;
     
     /**
@@ -50,26 +51,39 @@ public class ServidorLocal extends Thread {
     /**
      * Constructor privado (patrón Singleton)
      * 
-     * Inicializa el servidor en el puerto 9091.
-     * Elegí el 9091 porque es un puerto poco común, así no conflictúa
+     * Inicializa el servidor en el puerto 9090. Si está ocupado, busca
+     * automáticamente el siguiente puerto disponible (9091, 9092, etc.)
+     * Elegí el 9090 como base porque es un puerto poco común, así no conflictúa
      * con otros servicios como el 8080 (web) o el 3306 (MySQL).
      */
     private ServidorLocal() {
-        try {
-            serverSocket = new ServerSocket(PUERTO);
-            servidorActivo = true;
-            System.out.println("🌐 ======================================");
-            System.out.println("🌐 SERVIDOR FIDNESS INICIADO");
-            System.out.println("🌐 Puerto: " + PUERTO);
-            System.out.println("🌐 Estado: Escuchando conexiones...");
-            System.out.println("🌐 ======================================");
-        } catch (IOException e) {
-            System.err.println("⚠️ No se pudo iniciar el servidor en el puerto " + PUERTO);
-            System.err.println("   Motivo: " + e.getMessage());
-            System.err.println("   El servidor se ejecutará en modo desconectado");
-            System.err.println("   Las funciones de red no estarán disponibles");
-            servidorActivo = false;
+        // Buscar un puerto disponible automáticamente a partir del 9090
+        for (int intento = 0; intento < 20; intento++) {
+            int puertoPrueba = PUERTO_BASE + intento;
+            try {
+                serverSocket = new ServerSocket(puertoPrueba);
+                puertoActual = puertoPrueba;
+                servidorActivo = true;
+                System.out.println("🌐 ======================================");
+                System.out.println("🌐 SERVIDOR FIDNESS INICIADO");
+                System.out.println("🌐 Puerto: " + puertoActual);
+                System.out.println("🌐 Estado: Escuchando conexiones...");
+                System.out.println("🌐 ======================================");
+                return;
+            } catch (IOException e) {
+                // El puerto está ocupado, probamos el siguiente
+                if (intento == 0) {
+                    System.out.println("⚠️ Puerto " + puertoPrueba + " ocupado, probando siguientes...");
+                }
+            }
         }
+        
+        // Si llegamos aquí, no se encontró ningún puerto libre
+        System.err.println("⚠️ No se pudo iniciar el servidor en ningún puerto disponible");
+        System.err.println("   Motivo: todos los puertos del 9090 al 9109 están ocupados");
+        System.err.println("   El servidor se ejecutará en modo desconectado");
+        System.err.println("   Las funciones de red no estarán disponibles");
+        servidorActivo = false;
     }
     
     /**
@@ -139,5 +153,14 @@ public class ServidorLocal extends Thread {
      */
     public boolean estaCorriendo() {
         return servidorActivo && serverSocket != null && !serverSocket.isClosed() && ejecutando;
+    }
+    
+    /**
+     * Obtiene el puerto real donde está escuchando el servidor
+     * 
+     * @return número de puerto, o -1 si no está activo
+     */
+    public int getPuerto() {
+        return servidorActivo ? puertoActual : -1;
     }
 }
