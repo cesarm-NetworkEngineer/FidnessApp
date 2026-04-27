@@ -8,13 +8,13 @@ import controlador.ControladorEjercicios;
 import modelo.Rutina;
 import modelo.Usuario;
 import modelo.DetalleRutina;
+import modelo.ExportadorPDF;
 import persistencia.GestorDatos;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.io.IOException;
 import java.util.List;
 import javax.swing.border.TitledBorder;
 
@@ -178,7 +178,7 @@ public class PanelMisRutinas extends JPanel {
         btnNuevaRutina = crearBotonConEstilo("➕ Nueva Rutina");
         btnEditarRutina = crearBotonConEstilo("✏️ Editar");
         btnEliminarRutina = crearBotonConEstilo("🗑️ Eliminar");
-        btnExportarPDF = crearBotonConEstilo("📄 Exportar");
+        btnExportarPDF = crearBotonConEstilo("📄 Exportar PDF");
         btnRefrescar = crearBotonConEstilo("🔄 Refrescar");
         
         panelBotones.add(btnNuevaRutina);
@@ -238,20 +238,48 @@ public class PanelMisRutinas extends JPanel {
     }
     
     // ============================================================
+    // MÉTODOS DE REPARACIÓN DE RUTINAS ANTIGUAS
+    // ============================================================
+    
+    /**
+     * 🔧 Método para reparar rutinas antiguas
+     * Sincroniza los detalles desde la base de datos
+     * Esto asegura que las rutinas creadas con versiones anteriores
+     * tengan sus ejercicios correctamente cargados.
+     * 
+     * @param rutina La rutina a reparar
+     */
+    private void repararRutinaAntigua(Rutina rutina) {
+        try {
+            List<DetalleRutina> detalles = GestorDatos.cargarDetallesRutina(rutina.getId());
+            if (detalles != null && !detalles.isEmpty()) {
+                rutina.setDetalles(detalles);
+                System.out.println("🔧 Rutina reparada: " + rutina.getNombre() + " - " + detalles.size() + " ejercicios");
+            }
+        } catch (Exception e) {
+            System.err.println("⚠️ Error reparando rutina '" + rutina.getNombre() + "': " + e.getMessage());
+        }
+    }
+    
+    // ============================================================
     // MÉTODOS DE LÓGICA
     // ============================================================
     
     /**
      * Carga las rutinas desde la base de datos
+     * 🔧 AHORA CON REPARACIÓN AUTOMÁTICA DE RUTINAS ANTIGUAS
      */
     private void cargarRutinas() {
         modeloLista.clear();
         try {
             List<Rutina> rutinas = GestorDatos.cargarRutinasPorUsuario(usuarioActual.getId());
+            int reparadas = 0;
             for (Rutina r : rutinas) {
+                // 🔧 Reparar rutinas antiguas automáticamente
+                repararRutinaAntigua(r);
                 modeloLista.addElement(r);
             }
-            System.out.println("✅ Rutinas cargadas: " + rutinas.size());
+            System.out.println("✅ Rutinas cargadas: " + rutinas.size() + " (reparadas: " + reparadas + ")");
         } catch (Exception e) {
             System.err.println("❌ Error cargando rutinas: " + e.getMessage());
         }
@@ -291,7 +319,7 @@ public class PanelMisRutinas extends JPanel {
                         detalle.getNotas() != null && !detalle.getNotas().isEmpty() ? detalle.getNotas() : "—"
                     });
                 }
-                System.out.println("📋 Detalles cargados: " + detalles.size());
+                System.out.println("📋 Detalles cargados desde BD: " + detalles.size());
             } catch (Exception e) {
                 System.err.println("❌ Error cargando detalles: " + e.getMessage());
             }
@@ -368,7 +396,12 @@ public class PanelMisRutinas extends JPanel {
     }
     
     /**
-     * Exporta la rutina seleccionada
+     * ============================================================
+     * EXPORTAR RUTINA A PDF (CORREGIDO)
+     * ============================================================
+     * 
+     * Ahora carga los detalles directamente desde la base de datos
+     * para asegurar que siempre tenga los ejercicios.
      */
     private void exportarPDF() {
         Rutina seleccionada = listaRutinas.getSelectedValue();
@@ -379,55 +412,56 @@ public class PanelMisRutinas extends JPanel {
             return;
         }
         
+        // 🔴 CORREGIDO: Cargar los detalles desde la base de datos
+        List<DetalleRutina> detalles = null;
+        try {
+            detalles = GestorDatos.cargarDetallesRutina(seleccionada.getId());
+        } catch (Exception e) {
+            System.err.println("Error cargando detalles desde BD: " + e.getMessage());
+        }
+        
+        // Validar que la rutina tenga ejercicios
+        if (detalles == null || detalles.isEmpty()) {
+            JOptionPane.showMessageDialog(this, 
+                "La rutina no tiene ejercicios para exportar\n\n" +
+                "Verifique que haya agregado ejercicios a la rutina y que estos se hayan guardado correctamente.", 
+                "Aviso", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        
+        // Crear una rutina temporal con los detalles cargados
+        Rutina rutinaParaExportar = new Rutina(seleccionada.getId(), seleccionada.getNombre(), seleccionada.getIdUsuario());
+        rutinaParaExportar.setDetalles(detalles);
+        
         JFileChooser fileChooser = new JFileChooser(System.getProperty("user.home") + "/Desktop");
-        fileChooser.setSelectedFile(new java.io.File(seleccionada.getNombre().replaceAll(" ", "_") + ".txt"));
+        fileChooser.setSelectedFile(new java.io.File(seleccionada.getNombre().replaceAll(" ", "_") + ".pdf"));
         
         int resultado = fileChooser.showSaveDialog(this);
         
         if (resultado == JFileChooser.APPROVE_OPTION) {
             try {
                 String ruta = fileChooser.getSelectedFile().getAbsolutePath();
-                if (!ruta.endsWith(".txt")) {
-                    ruta += ".txt";
+                if (!ruta.endsWith(".pdf")) {
+                    ruta += ".pdf";
                 }
                 
-                try (java.io.FileWriter writer = new java.io.FileWriter(ruta)) {
-                    writer.write("====================================\n");
-                    writer.write("FIDNESS APP - RUTINA DE ENTRENAMIENTO\n");
-                    writer.write("====================================\n\n");
-                    writer.write("RUTINA: " + seleccionada.getNombre() + "\n");
-                    writer.write("USUARIO: " + usuarioActual.getNombre() + "\n");
-                    writer.write("FECHA: " + seleccionada.getFechaCreacionFormateada() + "\n");
-                    writer.write("\nEJERCICIOS:\n");
-                    writer.write("------------------------------------\n\n");
-                    
-                    List<DetalleRutina> detalles = GestorDatos.cargarDetallesRutina(seleccionada.getId());
-                    int orden = 1;
-                    for (DetalleRutina d : detalles) {
-                        writer.write(orden++ + ". ");
-                        if (controladorEjercicios != null) {
-                            modelo.Ejercicio ej = controladorEjercicios.buscarPorId(d.getIdEjercicio());
-                            if (ej != null) {
-                                writer.write(ej.getNombre());
-                            } else {
-                                writer.write("Ejercicio #" + d.getIdEjercicio());
-                            }
-                        }
-                        writer.write("\n   Series: " + d.getSeries() + " x Repeticiones: " + d.getRepeticiones() + "\n");
-                        if (d.getNotas() != null && !d.getNotas().isEmpty()) {
-                            writer.write("   Notas: " + d.getNotas() + "\n");
-                        }
-                        writer.write("\n");
-                    }
-                }
+                ExportadorPDF exportador = new ExportadorPDF();
+                boolean exito = exportador.exportar(rutinaParaExportar, ruta);
                 
-                JOptionPane.showMessageDialog(this, 
-                    "✅ Rutina exportada correctamente a:\n" + ruta, 
-                    "Éxito", JOptionPane.INFORMATION_MESSAGE);
-            } catch (HeadlessException | IOException ex) {
+                if (exito) {
+                    JOptionPane.showMessageDialog(this, 
+                        "✅ Rutina exportada correctamente a PDF:\n" + ruta, 
+                        "Éxito", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    JOptionPane.showMessageDialog(this, 
+                        "❌ Error al exportar la rutina", 
+                        "Error", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, 
                     "❌ Error al exportar: " + ex.getMessage(), 
                     "Error", JOptionPane.ERROR_MESSAGE);
+                ex.printStackTrace();
             }
         }
     }
