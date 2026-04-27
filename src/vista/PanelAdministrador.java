@@ -13,6 +13,14 @@ import javax.swing.table.JTableHeader;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+/**
+ * Panel de Administración del Catálogo de Ejercicios
+ * Permite gestionar (Crear, Leer, Actualizar, Eliminar) los ejercicios del sistema
+ * 
+ * @author cesarmorera
+ * @version 1.0
+ * @since 2026
+ */
 public class PanelAdministrador extends JPanel {
     
     private ControladorEjercicios controlador;
@@ -25,16 +33,24 @@ public class PanelAdministrador extends JPanel {
     private JButton btnEliminar;
     private JButton btnActualizar;
     
-    // 🎨 Colores profesionales y sobrios
-    private static final Color COLOR_FONDO = new Color(245, 245, 250);   // Gris muy claro
-    private static final Color COLOR_TEXTO = new Color(50, 50, 70);       // Gris oscuro
+    // 🎨 Colores profesionales con ALTO CONTRASTE
+    private static final Color COLOR_FONDO = new Color(245, 245, 250);
+    private static final Color COLOR_TEXTO = new Color(0, 0, 0);
     private static final Color COLOR_TABLA_FONDO = Color.WHITE;
     private static final Color COLOR_ENCABEZADO = new Color(220, 220, 230);
-    private static final Color COLOR_BOTON_PRIMARY = new Color(70, 130, 180);   // Azul acero
-    private static final Color COLOR_BOTON_EDIT = new Color(100, 100, 140);     // Gris azulado
-    private static final Color COLOR_BOTON_DELETE = new Color(180, 70, 70);     // Rojo suave
-    private static final Color COLOR_BOTON_REFRESH = new Color(80, 120, 100);   // Verde musgo
     
+    // 🔧 CORRECCIÓN DE BOTONES: Colores oscuros para que el texto BLANCO sea visible
+    private static final Color COLOR_BOTON_PRIMARY = new Color(25, 118, 210);    // Azul oscuro
+    private static final Color COLOR_BOTON_EDIT = new Color(56, 56, 96);         // Gris oscuro
+    private static final Color COLOR_BOTON_DELETE = new Color(211, 47, 47);      // Rojo oscuro
+    private static final Color COLOR_BOTON_REFRESH = new Color(46, 125, 50);     // Verde oscuro
+    
+    /**
+     * Constructor del panel administrador
+     * @param controlador Controlador que gestiona los ejercicios
+     * @param panelEjercicios Panel de ejercicios para actualizar vista
+     * @author cesarmorera
+     */
     public PanelAdministrador(ControladorEjercicios controlador, PanelEjercicios panelEjercicios) {
         this.controlador = controlador;
         this.panelEjercicios = panelEjercicios;
@@ -42,6 +58,10 @@ public class PanelAdministrador extends JPanel {
         cargarEjercicios();
     }
     
+    /**
+     * Inicializa todos los componentes visuales del panel
+     * @author cesarmorera
+     */
     private void initComponents() {
         setLayout(new BorderLayout(10, 10));
         setBorder(new EmptyBorder(15, 15, 15, 15));
@@ -62,14 +82,15 @@ public class PanelAdministrador extends JPanel {
         
         tablaEjercicios = new JTable(modeloTabla);
         tablaEjercicios.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        tablaEjercicios.setForeground(COLOR_TEXTO);
-        tablaEjercicios.setBackground(COLOR_TABLA_FONDO);
+        tablaEjercicios.setForeground(Color.BLACK);
+        tablaEjercicios.setBackground(Color.WHITE);
+        tablaEjercicios.setSelectionForeground(Color.WHITE);
+        tablaEjercicios.setSelectionBackground(new Color(25, 118, 210));
         tablaEjercicios.setRowHeight(28);
-        tablaEjercicios.setSelectionBackground(new Color(200, 210, 230));
         
         JTableHeader header = tablaEjercicios.getTableHeader();
         header.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        header.setForeground(COLOR_TEXTO);
+        header.setForeground(Color.BLACK);
         header.setBackground(COLOR_ENCABEZADO);
         
         tablaEjercicios.getColumnModel().getColumn(0).setPreferredWidth(50);
@@ -82,10 +103,11 @@ public class PanelAdministrador extends JPanel {
         JPanel panelBotones = new JPanel(new FlowLayout(FlowLayout.CENTER, 15, 10));
         panelBotones.setBackground(COLOR_FONDO);
         
-        btnAgregar = crearBoton("➕ Agregar", COLOR_BOTON_PRIMARY);
-        btnEditar = crearBoton("✏️ Editar", COLOR_BOTON_EDIT);
-        btnEliminar = crearBoton("🗑️ Eliminar", COLOR_BOTON_DELETE);
-        btnActualizar = crearBoton("🔄 Actualizar", COLOR_BOTON_REFRESH);
+        // 🔧 CORRECCIÓN: Botones con texto BLANCO y fondo OSCURO (máximo contraste)
+        btnAgregar = crearBoton("➕ Agregar", COLOR_BOTON_PRIMARY, Color.WHITE);
+        btnEditar = crearBoton("✏️ Editar", COLOR_BOTON_EDIT, Color.WHITE);
+        btnEliminar = crearBoton("🗑️ Eliminar", COLOR_BOTON_DELETE, Color.WHITE);
+        btnActualizar = crearBoton("🔄 Actualizar", COLOR_BOTON_REFRESH, Color.WHITE);
         
         panelBotones.add(btnAgregar);
         panelBotones.add(btnEditar);
@@ -100,17 +122,31 @@ public class PanelAdministrador extends JPanel {
         btnActualizar.addActionListener(e -> cargarEjercicios());
     }
     
-    private JButton crearBoton(String texto, Color color) {
+    /**
+     * Crea un botón con estilo consistente
+     * @param texto Texto del botón
+     * @param fondo Color de fondo del botón
+     * @param textoColor Color del texto del botón
+     * @return Botón configurado
+     * @author cesarmorera
+     */
+    private JButton crearBoton(String texto, Color fondo, Color textoColor) {
         JButton boton = new JButton(texto);
-        boton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        boton.setForeground(Color.WHITE);
-        boton.setBackground(color);
+        boton.setFont(new Font("Segoe UI", Font.BOLD, 13));  // Fuente más gruesa para mejor legibilidad
+        boton.setForeground(textoColor);
+        boton.setBackground(fondo);
         boton.setFocusPainted(false);
-        boton.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
+        boton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));  // Más padding
         boton.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        boton.setOpaque(true);
+        boton.setBorderPainted(false);
         return boton;
     }
     
+    /**
+     * Carga todos los ejercicios desde el controlador a la tabla
+     * @author cesarmorera
+     */
     private void cargarEjercicios() {
         modeloTabla.setRowCount(0);
         for (Ejercicio e : controlador.getTodosLosEjercicios()) {
@@ -123,6 +159,11 @@ public class PanelAdministrador extends JPanel {
         }
     }
     
+    /**
+     * Agrega un nuevo ejercicio al catálogo
+     * Muestra un diálogo para ingresar todos los datos del ejercicio
+     * @author cesarmorera
+     */
     private void agregarEjercicio() {
         JTextField txtNombre = new JTextField(20);
         JTextArea txtDescripcion = new JTextArea(3, 20);
@@ -161,6 +202,11 @@ public class PanelAdministrador extends JPanel {
         }
     }
     
+    /**
+     * Edita un ejercicio existente
+     * Carga los datos actuales del ejercicio y permite modificarlos
+     * @author cesarmorera
+     */
     private void editarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
@@ -209,6 +255,11 @@ public class PanelAdministrador extends JPanel {
         }
     }
     
+    /**
+     * Elimina un ejercicio del catálogo
+     * Solicita confirmación antes de eliminar
+     * @author cesarmorera
+     */
     private void eliminarEjercicio() {
         int fila = tablaEjercicios.getSelectedRow();
         if (fila < 0) {
@@ -228,6 +279,10 @@ public class PanelAdministrador extends JPanel {
         }
     }
     
+    /**
+     * Refresca la tabla con los datos más recientes
+     * @author cesarmorera
+     */
     public void refrescar() {
         cargarEjercicios();
     }
